@@ -8,6 +8,8 @@
 
 import Foundation
 
+public typealias HarmonyMetadataKey = String
+
 extension HarmonyMetadataKey
 {
     static let recordedObjectType = HarmonyMetadataKey("harmony_recordedObjectType")
@@ -31,3 +33,25 @@ extension HarmonyMetadataKey
                 .sha1Hash, .author, .localizedName]
     }
 }
+//
+//@objc
+//public enum HarmonyMetadataKey: Int, RawRepresentable, CaseIterable {
+//    case recordedObjectType = "harmony_recordedObjectType"
+//    case recordedObjectIdentifier = "harmony_recordedObjectIdentifier"
+//
+//    case relationshipIdentifier = "harmony_relationshipIdentifier"
+//
+//    case isLocked = "harmony_locked"
+//
+//    case previousVersionIdentifier = "harmony_previousVersionIdentifier"
+//    case previousVersionDate = "harmony_previousVersionDate"
+//
+//    case sha1Hash = "harmony_sha1Hash"
+//
+//    case author = "harmony_author"
+//    case localizedName = "harmony_localizedName"
+//
+//    public static var allHarmonyKeys: Set<HarmonyMetadataKey> {
+//        return Set(HarmonyMetadataKey.allCases)
+//    }
+//}

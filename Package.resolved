@@ -1,0 +1,14 @@
+{
+  "pins" : [
+    {
+      "identity" : "roxas",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/JoeMatt/Roxas.git",
+      "state" : {
+        "revision" : "25c99d86b7f9b663e5c42acbe655f65a07cf2bc9",
+        "version" : "1.0.2"
+      }
+    }
+  ],
+  "version" : 2
+}
