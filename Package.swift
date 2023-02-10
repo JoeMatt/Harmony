@@ -25,14 +25,14 @@ let package = Package(
             type: .static,
             targets: ["Harmony"]
         ),
-        // Removed example due to circular dependency with sub-modules, HarmonyDrive/HarmonyDropbox
 //        .executable(name: "Example", targets: ["Example"])
     ],
     dependencies: [
          .package(url: "https://github.com/JoeMatt/Roxas.git", from: "1.0.2"),
+         .package(url: "https://github.com/mattgallagher/CwlPreconditionTesting.git", from: Version("2.0.0"))
          //        .package(path: "../Roxas")
+         // Technically, example needs this, but results in circular include
 //         .package(url: "https://github.com/JoeMatt/Harmony-Drive.git", from: "1.0.0"),
-//         .package(url: "https://github.com/JoeMatt/Harmony-Dropbox.git", from: "1.0.0"),
 //
     ],
     targets: [
@@ -52,7 +52,7 @@ let package = Package(
         ),
 //        .executableTarget(
 //            name: "Example",
-//            dependencies: ["Harmony", "Roxas", "HarmonyDrive", "HarmonyDropbox"],
+//            dependencies: ["Harmony", "Roxas"],
 //            resources: [
 //                .copy("Resources/GoogleService-Info.plist"),
 //                .process("Resources/UIKit")
@@ -64,7 +64,7 @@ let package = Package(
 //        ),
         .testTarget(
             name: "HarmonyTests",
-            dependencies: ["Harmony"]
+            dependencies: ["Harmony", "CwlPreconditionTesting"]
         )
     ]
 )

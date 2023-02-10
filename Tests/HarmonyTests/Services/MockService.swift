@@ -8,6 +8,7 @@
 
 import Foundation
 import CoreData
+import UIKit
 
 @testable import Harmony
 
@@ -74,7 +75,7 @@ extension MockService: Service
     {
     }
     
-    func deauthenticate(completionHandler: @escaping (Result<Void, AuthenticationError>) -> Void)
+    func deauthenticate(completionHandler: @escaping (Result<Void, DeauthenticationError>) -> Void)
     {
     }
     

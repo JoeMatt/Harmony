@@ -7,6 +7,7 @@
 //
 
 import XCTest
+import CwlCatchExceptionSupport
 @testable import Harmony
 
 import Roxas

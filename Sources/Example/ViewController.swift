@@ -10,7 +10,9 @@ import UIKit
 import CoreData
 
 import Harmony
+#if canImport(Harmony_Drive)
 import Harmony_Drive
+#endif
 
 import Roxas
 
@@ -37,8 +39,10 @@ class ViewController: UITableViewController
             
             self.tableView.dataSource = self.dataSource
         }
-        
+
+#if canImport(Harmony_Drive)
         self.syncCoordinator = SyncCoordinator(service: DriveService.shared, persistentContainer: self.persistentContainer)
+#endif
         self.syncCoordinator.start { (result) in
             do
             {
@@ -53,7 +57,8 @@ class ViewController: UITableViewController
         }
         
         NotificationCenter.default.addObserver(self, selector: #selector(ViewController.syncDidFinish(_:)), name: SyncCoordinator.didFinishSyncingNotification, object: self.syncCoordinator)
-        
+
+#if canImport(Harmony_Drive)
         DriveService.shared.clientID = "1075055855134-qilcmemb9e2pngq0i1n0ptpsc0pq43vp.apps.googleusercontent.com"
         
         DriveService.shared.authenticateInBackground { (result) in
@@ -63,6 +68,7 @@ class ViewController: UITableViewController
             case .failure(let error): print(error.localizedDescription)
             }
         }
+#endif
     }
 
     override func didReceiveMemoryWarning() {
@@ -94,6 +100,7 @@ private extension ViewController
 {
     @IBAction func authenticate(_ sender: UIBarButtonItem)
     {
+#if canImport(Harmony_Drive)
         DriveService.shared.authenticate(withPresentingViewController: self) { (result) in
             switch result
             {
@@ -101,6 +108,7 @@ private extension ViewController
             case .failure(let error): print(error.localizedDescription)
             }
         }
+#endif
     }
     
     @IBAction func addHomework(_ sender: UIBarButtonItem)
