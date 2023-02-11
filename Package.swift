@@ -2,13 +2,14 @@
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
-import Foundation
 
 let package = Package(
     name: "Harmony",
     defaultLocalization: "en",
     platforms: [
-        .iOS(.v12)
+        .iOS(.v12),
+        .tvOS(.v14),
+        .macCatalyst(.v14),
     ],
     products: [
         .library(
@@ -28,7 +29,7 @@ let package = Package(
 //        .executable(name: "Example", targets: ["Example"])
     ],
     dependencies: [
-         .package(url: "https://github.com/JoeMatt/Roxas.git", from: "1.0.2"),
+         .package(url: "https://github.com/JoeMatt/Roxas.git", from: "1.1.0"),
          .package(url: "https://github.com/mattgallagher/CwlPreconditionTesting.git", from: Version("2.0.0"))
          //        .package(path: "../Roxas")
          // Technically, example needs this, but results in circular include
@@ -42,7 +43,7 @@ let package = Package(
                 .product(name: "Roxas", package: "Roxas")
             ],
             resources: [
-                .process("Resources"),
+                .process("Resources/"),
             ],
             publicHeadersPath: "include",
             linkerSettings: [
