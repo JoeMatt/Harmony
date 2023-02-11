@@ -8,8 +8,8 @@ let package = Package(
     defaultLocalization: "en",
     platforms: [
         .iOS(.v12),
-        .tvOS(.v14),
-        .macCatalyst(.v14),
+        .tvOS(.v12),
+        .macCatalyst(.v13)
     ],
     products: [
         .library(
@@ -29,7 +29,7 @@ let package = Package(
 //        .executable(name: "Example", targets: ["Example"])
     ],
     dependencies: [
-         .package(url: "https://github.com/JoeMatt/Roxas.git", from: "1.1.0"),
+         .package(url: "https://github.com/JoeMatt/Roxas.git", from: "1.1.1"),
          .package(url: "https://github.com/mattgallagher/CwlPreconditionTesting.git", from: Version("2.0.0"))
          //        .package(path: "../Roxas")
          // Technically, example needs this, but results in circular include
