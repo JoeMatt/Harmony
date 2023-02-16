@@ -11,6 +11,26 @@ import CoreData
 @_implementationOnly import os.log
 import Roxas
 
+#if canImport(UIKit)
+import UIKit
+#else
+import IOKit
+fileprivate func getMacModel() -> String {
+	let service = IOServiceGetMatchingService(kIOMainPortDefault,
+											  IOServiceMatching("IOPlatformExpertDevice"))
+	var modelIdentifier: String?
+
+	if let modelData = IORegistryEntryCreateCFProperty(service, "model" as CFString, kCFAllocatorDefault, 0).takeRetainedValue() as? Data {
+		if let modelIdentifierCString = String(data: modelData, encoding: .utf8)?.cString(using: .utf8) {
+			modelIdentifier = String(cString: modelIdentifierCString)
+		}
+	}
+
+	IOObjectRelease(service)
+	return modelIdentifier ?? "Unknown Mac"
+}
+#endif
+
 class UploadRecordOperation: RecordOperation<RemoteRecord> {
     private var localRecord: LocalRecord!
 
@@ -224,7 +244,11 @@ private extension UploadRecordOperation {
         var metadata = localRecord.recordedObject?.syncableMetadata.mapValues { $0 as Any } ?? [:]
         metadata[.recordedObjectType] = localRecord.recordedObjectType
         metadata[.recordedObjectIdentifier] = localRecord.recordedObjectIdentifier
+		#if canImport(UIKit)
         metadata[.author] = UIDevice.current.name
+		#else
+		metadata[.author] = getMacModel()
+		#endif
         metadata[.localizedName] = localRecord.recordedObject?.syncableLocalizedName as Any
 
         if record.shouldLockWhenUploading {

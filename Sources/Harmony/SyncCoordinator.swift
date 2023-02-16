@@ -9,7 +9,9 @@
 import CoreData
 import Foundation
 @_implementationOnly import os.log
+#if canImport(UIKit)
 import UIKit
+#endif
 
 public extension SyncCoordinator {
     static let didStartSyncingNotification = Notification.Name("syncCoordinatorDidStartSyncingNotification")
@@ -180,6 +182,7 @@ public extension SyncCoordinator {
 }
 
 public extension SyncCoordinator {
+#if canImport(UIKit)
     func authenticate(presentingViewController: UIViewController? = nil, completionHandler: @escaping (Result<Account, AuthenticationError>) -> Void) {
         guard isStarted
         else {
@@ -231,6 +234,55 @@ public extension SyncCoordinator {
         operation.requiresAuthentication = false
         operation.start()
     }
+	#else
+	func authenticate(completionHandler: @escaping (Result<Account, AuthenticationError>) -> Void) {
+		guard isStarted
+		else {
+			start { result in
+				switch result {
+				case .success: self.authenticate(completionHandler: completionHandler)
+				case let .failure(error): completionHandler(.failure(AuthenticationError(error)))
+				}
+			}
+
+			return
+		}
+
+		let operation = ServiceOperation<Account, AuthenticationError>(coordinator: self) { completionHandler -> Progress? in
+				DispatchQueue.main.async {
+					self.service.authenticateInBackground(completionHandler: completionHandler)
+				}
+				return nil
+			}
+		operation.resultHandler = { result in
+			let result = result.mapError { AuthenticationError($0) }
+			switch result {
+			case let .success(account):
+				let context = self.recordController.newBackgroundContext()
+				context.performAndWait {
+					let account = ManagedAccount(account: account, service: self.service, context: context)
+
+					do {
+						try context.save()
+
+						self.isAuthenticated = true
+					} catch {
+						os_log("Failed to save account. %@ %@", type: .error, account, error.localizedDescription)
+					}
+				}
+
+			case .failure: break
+			}
+
+			completionHandler(result)
+		}
+
+		// Don't add to operation queue, or else it might result in a deadlock
+		// if another operation we've started requires reauthentication.
+		operation.requiresAuthentication = false
+		operation.start()
+	}
+	#endif
 
     func deauthenticate(completionHandler: @escaping (Result<Void, DeauthenticationError>) -> Void) {
         // Set isAuthenticated to false immediately to disable syncing while we attempt deauthentication.

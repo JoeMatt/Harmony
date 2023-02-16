@@ -8,10 +8,6 @@
 
 #if canImport(UIKit)
 import UIKit
-#else
-import AppKit
-import Cocoa
-#endif
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -44,3 +40,29 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
     }
 }
+#else
+import AppKit
+import Cocoa
+
+@NSApplicationMain
+class AppDelegate: NSResponder, NSApplicationDelegate {
+	var window: NSWindow?
+
+	func applicationDidFinishLaunching(_ notification: Notification) {
+		// Override point for customization after application launch.
+	}
+
+	func applicationWillBecomeActive(_ notification: Notification) {
+
+	}
+
+	func applicationDidBecomeActive(_ notification: Notification) {
+
+	}
+
+	func applicationWillTerminate(_ notification: Notification) {
+
+	}
+}
+
+#endif

@@ -14,6 +14,7 @@ import CoreData
 import UIKit
 
 import Harmony
+import RoxasUIKit
 import Roxas
 
 class ViewController: UITableViewController {

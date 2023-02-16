@@ -30,12 +30,9 @@ let package = Package(
         .executable(name: "HarmonyExample", targets: ["HarmonyExample"]),
     ],
     dependencies: [
-         .package(url: "https://github.com/JoeMatt/Roxas.git", from: "1.1.1"),
-         .package(url: "https://github.com/mattgallagher/CwlPreconditionTesting.git", from: Version("2.0.0"))
-         //        .package(path: "../Roxas")
-         // Technically, example needs this, but results in circular include
-//         .package(url: "https://github.com/JoeMatt/Harmony-Drive.git", from: "1.0.0"),
-//
+         .package(url: "https://github.com/mattgallagher/CwlPreconditionTesting.git", from: Version("2.0.0")),
+         .package(url: "https://github.com/JoeMatt/Roxas.git", from: "1.2.0")
+//        .package(path: "../Roxas")
     ],
     targets: [
         .target(
@@ -62,7 +59,8 @@ let package = Package(
 	   ),
         .executableTarget(
             name: "HarmonyExample",
-            dependencies: [ "Harmony", "HarmonyTestData" ],
+			dependencies: [ "Harmony", "HarmonyTestData",
+							.product(name: "RoxasUI", package: "Roxas", condition: .when(platforms: [.iOS, .tvOS, .macCatalyst]))],
             resources: [
                 .copy("Resources/GoogleService-Info.plist"),
                 .process("Resources/UIKit")

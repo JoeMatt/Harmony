@@ -11,6 +11,10 @@ import Foundation
 @_implementationOnly import os.log
 import Roxas
 
+#if canImport(UIKit)
+import UIKit
+#endif
+
 class SyncRecordsOperation: Operation<[Record<NSManagedObject>: Result<Void, RecordError>], SyncError> {
     let changeToken: Data?
 
@@ -19,8 +23,9 @@ class SyncRecordsOperation: Operation<[Record<NSManagedObject>: Result<Void, Rec
     private let dispatchGroup = DispatchGroup()
 
     private(set) var updatedChangeToken: Data?
+#if canImport(UIKit)
     private var backgroundTaskIdentifier: UIBackgroundTaskIdentifier?
-
+	#endif
     private var recordResults = [Record<NSManagedObject>: Result<Void, RecordError>]()
 
     override var isAsynchronous: Bool {
@@ -40,11 +45,12 @@ class SyncRecordsOperation: Operation<[Record<NSManagedObject>: Result<Void, Rec
         super.main()
 
         progress.addChild(syncProgress, withPendingUnitCount: 1)
-
+		#if canImport(UIKit)
         backgroundTaskIdentifier = UIApplication.shared.beginBackgroundTask(withName: "com.rileytestut.Harmony.SyncRecordsOperation") { [weak self] in
                 guard let identifier = self?.backgroundTaskIdentifier else { return }
                 UIApplication.shared.endBackgroundTask(identifier)
             }
+		#endif
 
         NotificationCenter.default.post(name: SyncCoordinator.didStartSyncingNotification, object: nil)
 
@@ -139,12 +145,13 @@ class SyncRecordsOperation: Operation<[Record<NSManagedObject>: Result<Void, Rec
         }
 
         super.finish()
-
+#if canImport(UIKit)
         if let identifier = backgroundTaskIdentifier {
             UIApplication.shared.endBackgroundTask(identifier)
 
             backgroundTaskIdentifier = nil
         }
+		#endif
     }
 }
 

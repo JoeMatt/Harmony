@@ -23,8 +23,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/JoeMatt/Roxas.git",
       "state" : {
-        "revision" : "902171c1ddaa1b49294b3899d7230ef7c3a1c5ea",
-        "version" : "1.1.1"
+        "revision" : "f42626c3b6ac433481a546cb0b6733b90e40991b",
+        "version" : "1.2.0"
       }
     }
   ],
