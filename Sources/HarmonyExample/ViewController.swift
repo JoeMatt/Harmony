@@ -17,7 +17,7 @@ import UIKit
 @_exported import RoxasUIKit
 @_exported import Roxas
 
-class ViewController: UITableViewController {
+open class ViewController: UITableViewController {
     private var persistentContainer: NSPersistentContainer!
 
     private var changeToken: Data?
@@ -32,7 +32,7 @@ class ViewController: UITableViewController {
 
     private lazy var dataSource = self.makeDataSource()
 
-    override func viewDidLoad() {
+    override public func viewDidLoad() {
         super.viewDidLoad()
 
         let model = NSManagedObjectModel.mergedModel(from: nil)!
@@ -51,7 +51,7 @@ class ViewController: UITableViewController {
         addObservers()
     }
 
-    override func didReceiveMemoryWarning() {
+    override public func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
@@ -171,7 +171,7 @@ private extension ViewController {
     }
 }
 
-extension ViewController {
+public extension ViewController {
     override func tableView(_: UITableView, didSelectRowAt indexPath: IndexPath) {
         let homework = dataSource.item(at: indexPath)
 

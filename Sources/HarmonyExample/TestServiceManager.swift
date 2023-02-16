@@ -11,7 +11,7 @@ import CoreData
 @_exported import Harmony
 @_exported import Roxas
 
-public class ServiceManager {
+open class ServiceManager {
 	public static let shared: ServiceManager = .init()
 	public var services = [any Service]()
 }
