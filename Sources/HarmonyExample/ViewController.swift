@@ -32,7 +32,7 @@ open class ViewController: UITableViewController {
 
     private lazy var dataSource = self.makeDataSource()
 
-    override public func viewDidLoad() {
+    override open func viewDidLoad() {
         super.viewDidLoad()
 
         let model = NSManagedObjectModel.mergedModel(from: nil)!
