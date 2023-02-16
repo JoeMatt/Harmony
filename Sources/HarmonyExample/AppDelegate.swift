@@ -1,12 +1,17 @@
 //
 //  AppDelegate.swift
-//  Example
+//  HarmonyExample
 //
 //  Created by Riley Testut on 1/23/18.
 //  Copyright © 2018 Riley Testut. All rights reserved.
 //
 
+#if canImport(UIKit)
 import UIKit
+#else
+import AppKit
+import Cocoa
+#endif
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {

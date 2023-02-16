@@ -27,7 +27,7 @@ let package = Package(
             type: .static,
             targets: ["Harmony"]
         ),
-        .executable(name: "Example", targets: ["Example"])
+        .executable(name: "HarmonyExample", targets: ["HarmonyExample"]),
     ],
     dependencies: [
          .package(url: "https://github.com/JoeMatt/Roxas.git", from: "1.1.1"),
@@ -61,7 +61,7 @@ let package = Package(
 			]
 	   ),
         .executableTarget(
-            name: "Example",
+            name: "HarmonyExample",
             dependencies: [ "Harmony", "HarmonyTestData" ],
             resources: [
                 .copy("Resources/GoogleService-Info.plist"),

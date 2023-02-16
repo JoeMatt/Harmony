@@ -1,14 +1,16 @@
 //
 //  ViewController.swift
-//  Example
+//  HarmonyExample
 //
 //  Created by Riley Testut on 1/23/18.
 //  Copyright © 2018 Riley Testut. All rights reserved.
 //
 
+#if canImport(UIKit)
 import CoreData
 @_implementationOnly import HarmonyTestData
 @_implementationOnly import os.log
+
 import UIKit
 
 import Harmony
@@ -193,3 +195,4 @@ extension ViewController {
         }
     }
 }
+#endif
