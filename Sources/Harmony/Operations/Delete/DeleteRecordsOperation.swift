@@ -8,62 +8,51 @@
 
 import Foundation
 import CoreData
+@_implementationOnly import os.log
 
-class DeleteRecordsOperation: BatchRecordOperation<Void, DeleteRecordOperation>
-{
+class DeleteRecordsOperation: BatchRecordOperation<Void, DeleteRecordOperation> {
     private var syncableFiles = [AnyRecord: Set<File>]()
-    
+
     override class var predicate: NSPredicate {
         return ManagedRecord.deleteRecordsPredicate
     }
-    
-    override func main()
-    {
+
+    override func main() {
         self.syncProgress.status = .deleting
-        
+
         super.main()
     }
-    
-    override func process(_ records: [AnyRecord], in context: NSManagedObjectContext, completionHandler: @escaping (Result<[AnyRecord], Error>) -> Void)
-    {
-        for record in records
-        {
+
+    override func process(_ records: [AnyRecord], in context: NSManagedObjectContext, completionHandler: @escaping (Result<[AnyRecord], Error>) -> Void) {
+        for record in records {
             record.perform { (managedRecord) in
                 guard let syncableFiles = managedRecord.localRecord?.recordedObject?.syncableFiles else { return }
                 self.syncableFiles[record] = syncableFiles
             }
         }
-        
+
         completionHandler(.success(records))
     }
-    
-    override func process(_ result: Result<[AnyRecord : Result<Void, RecordError>], Error>, in context: NSManagedObjectContext, completionHandler: @escaping () -> Void)
-    {
+
+    override func process(_ result: Result<[AnyRecord: Result<Void, RecordError>], Error>, in context: NSManagedObjectContext, completionHandler: @escaping () -> Void) {
         guard case .success(let results) = result else { return completionHandler() }
-        
-        for (record, result) in results
-        {
+
+        for (record, result) in results {
             guard case .success = result else { continue }
-            
+
             guard let files = self.syncableFiles[record] else { continue }
-            
-            for file in files
-            {
-                do
-                {
+
+            for file in files {
+                do {
                     try FileManager.default.removeItem(at: file.fileURL)
-                }
-                catch CocoaError.fileNoSuchFile
-                {
+                } catch CocoaError.fileNoSuchFile {
                     // Ignore
-                }
-                catch
-                {
-                    print("Harmony failed to delete file at URL:", file.fileURL)
+                } catch {
+					os_log("Harmony failed to delete file at URL: %@", type: .error, String(describing: file.fileURL))
                 }
             }
         }
-        
+
         completionHandler()
     }
 }

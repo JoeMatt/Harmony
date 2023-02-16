@@ -8,10 +8,8 @@
 
 import CoreData
 
-public extension NSManagedObjectModel
-{
-    class func harmonyModel(byMergingWith managedObjectModels: [NSManagedObjectModel]) -> NSManagedObjectModel?
-    {
+public extension NSManagedObjectModel {
+    class func harmonyModel(byMergingWith managedObjectModels: [NSManagedObjectModel]) -> NSManagedObjectModel? {
         #if SWIFT_PACKAGE
         let modelURL = Bundle.module.url(forResource: "Harmony", withExtension: "momd")
         #else
@@ -24,18 +22,17 @@ public extension NSManagedObjectModel
         {
             fatalError("Harmony Core Data model cannot be found. Aborting.")
         }
-        
+
         let models = managedObjectModels + [harmonyModel]
-        
+
         guard let mergedModel = NSManagedObjectModel(byMerging: models) else { return nil }
-        
+
         // Retrieve entity names from provided managed object models, and then retrieve matching entities from merged model.
         let externalEntityNames = Set(managedObjectModels.flatMap { $0.entities.compactMap { $0.name } })
         let externalEntities = mergedModel.entities.filter { externalEntityNames.contains($0.name!) }
-        
+
         mergedModel.setEntities(externalEntities, forConfigurationName: Configuration.external.rawValue)
-        
+
         return mergedModel
     }
 }
-

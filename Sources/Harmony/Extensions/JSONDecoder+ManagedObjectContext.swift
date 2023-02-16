@@ -9,13 +9,11 @@
 import Foundation
 import CoreData
 
-private extension CodingUserInfoKey
-{
+private extension CodingUserInfoKey {
     static let managedObjectContext = CodingUserInfoKey(rawValue: "managedObjectContext")!
 }
 
-public extension JSONDecoder
-{
+public extension JSONDecoder {
     var managedObjectContext: NSManagedObjectContext? {
         get {
             let managedObjectContext = self.userInfo[.managedObjectContext] as? NSManagedObjectContext
@@ -27,8 +25,7 @@ public extension JSONDecoder
     }
 }
 
-public extension Decoder
-{
+public extension Decoder {
     var managedObjectContext: NSManagedObjectContext? {
         let managedObjectContext = self.userInfo[.managedObjectContext] as? NSManagedObjectContext
         return managedObjectContext

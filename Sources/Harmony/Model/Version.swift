@@ -8,13 +8,11 @@
 
 import Foundation
 
-public struct Version: Hashable
-{
+public struct Version: Hashable {
     public var identifier: String
     public var date: Date
-    
-    public init(identifier: String, date: Date)
-    {
+
+    public init(identifier: String, date: Date) {
         self.identifier = identifier
         self.date = date
     }

@@ -12,16 +12,14 @@ import CoreData
 import Harmony
 
 @objc(Professor)
-public class Professor: NSManagedObject
-{    
+public class Professor: NSManagedObject {
 }
 
-extension Professor: Syncable
-{
+extension Professor: Syncable {
     public class var syncablePrimaryKey: AnyKeyPath {
         return \Professor.identifier
     }
-    
+
     public var syncableKeys: Set<AnyKeyPath> {
         return [\Professor.name]
     }

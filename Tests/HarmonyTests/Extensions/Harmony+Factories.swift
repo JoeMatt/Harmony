@@ -11,15 +11,12 @@ import CoreData
 
 @testable import Harmony
 
-extension NSManagedObjectContext
-{
+extension NSManagedObjectContext {
     static var harmonyFactoryDefault: NSManagedObjectContext!
 }
 
-extension RemoteRecord
-{
-    class func make(identifier: String = UUID().uuidString, versionIdentifier: String = UUID().uuidString, versionDate: Date = Date(), recordedObjectType: String = "Sora", recordedObjectIdentifier: String = UUID().uuidString, status: RecordStatus = .normal, context: NSManagedObjectContext = .harmonyFactoryDefault) -> RemoteRecord
-    {        
+extension RemoteRecord {
+    class func make(identifier: String = UUID().uuidString, versionIdentifier: String = UUID().uuidString, versionDate: Date = Date(), recordedObjectType: String = "Sora", recordedObjectIdentifier: String = UUID().uuidString, status: RecordStatus = .normal, context: NSManagedObjectContext = .harmonyFactoryDefault) -> RemoteRecord {
         let record = RemoteRecord(identifier: identifier,
                                   versionIdentifier: versionIdentifier,
                                   versionDate: versionDate,

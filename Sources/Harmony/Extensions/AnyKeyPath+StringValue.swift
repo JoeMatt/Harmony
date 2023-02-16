@@ -8,8 +8,7 @@
 
 import Foundation
 
-extension AnyKeyPath
-{
+extension AnyKeyPath {
     var stringValue: String? {
         return self._kvcKeyPathString
     }

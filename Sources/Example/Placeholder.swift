@@ -12,6 +12,5 @@ import CoreData
 import Harmony
 
 @objc(Placeholder)
-public class Placeholder: NSManagedObject
-{
+public class Placeholder: NSManagedObject {
 }

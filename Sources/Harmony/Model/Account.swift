@@ -8,19 +8,16 @@
 
 import Foundation
 
-public struct Account
-{
+public struct Account {
     public var name: String
     public var emailAddress: String?
-        
-    public init(name: String, emailAddress: String?)
-    {
+
+    public init(name: String, emailAddress: String?) {
         self.name = name
         self.emailAddress = emailAddress
     }
-    
-    init(account: ManagedAccount)
-    {
+
+    init(account: ManagedAccount) {
         self.name = account.name
         self.emailAddress = account.emailAddress
     }

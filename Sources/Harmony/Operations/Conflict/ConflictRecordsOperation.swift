@@ -9,17 +9,15 @@
 import Foundation
 import CoreData
 
-class ConflictRecordsOperation: BatchRecordOperation<Void, ConflictRecordOperation>
-{
+class ConflictRecordsOperation: BatchRecordOperation<Void, ConflictRecordOperation> {
     override class var predicate: NSPredicate {
         return ManagedRecord.conflictRecordsPredicate
     }
-    
-    override func main()
-    {
+
+    override func main() {
         // Not worth having an additional state for just conflicting records.
         self.syncProgress.status = .fetchingChanges
-        
+
         super.main()
     }
 }
