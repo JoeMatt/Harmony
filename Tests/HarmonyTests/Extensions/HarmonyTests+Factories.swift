@@ -8,7 +8,7 @@
 
 import Foundation
 import CoreData
-
+@testable @_implementationOnly import HarmonyTestData
 @testable import Harmony
 
 extension NSManagedObjectContext {

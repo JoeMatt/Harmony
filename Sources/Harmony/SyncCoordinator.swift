@@ -28,7 +28,7 @@ extension SyncCoordinator {
 public typealias SyncResult = Result<[AnyRecord: Result<Void, RecordError>], SyncError>
 
 public final class SyncCoordinator {
-    public let service: Service
+	public let service: any Service
     public let persistentContainer: NSPersistentContainer
 
     public let recordController: RecordController
@@ -75,7 +75,7 @@ public final class SyncCoordinator {
     private let operationQueue: OperationQueue
     private let syncOperationQueue: OperationQueue
 
-    public init(service: Service, persistentContainer: NSPersistentContainer) {
+	public init(service: any Service, persistentContainer: NSPersistentContainer) {
         self.service = service
         self.persistentContainer = persistentContainer
         self.recordController = RecordController(persistentContainer: persistentContainer)

@@ -18,10 +18,11 @@ class Operation<ResultType, ErrorType: Swift.Error>: RSTOperation, ProgressRepor
 
     let operationQueue: OperationQueue
 
-    var result: Result<ResultType, ErrorType>?
-    var resultHandler: ((Result<ResultType, ErrorType>) -> Void)?
+	public typealias OperationResult = Result<ResultType, ErrorType>
+    var result: OperationResult?
+    var resultHandler: ((OperationResult) -> Void)?
 
-    var service: Service {
+	var service: any Service {
         return self.coordinator.service
     }
 

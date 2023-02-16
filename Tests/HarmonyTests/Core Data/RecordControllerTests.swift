@@ -9,6 +9,7 @@
 import XCTest
 import CwlCatchExceptionSupport
 @testable import Harmony
+@_implementationOnly import HarmonyTestData
 
 import Roxas
 

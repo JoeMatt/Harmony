@@ -10,7 +10,7 @@ import Foundation
 import CoreData
 import UIKit
 
-public protocol Service {
+public protocol Service: Equatable {
     var localizedName: String { get }
     var identifier: String { get }
 
@@ -35,14 +35,22 @@ public protocol Service {
     func fetchVersions(for record: AnyRecord, completionHandler: @escaping (Result<[Version], RecordError>) -> Void) -> Progress
 }
 
-public func ==(lhs: Service, rhs: Service) -> Bool {
-    return lhs.identifier == rhs.identifier
+
+public extension Equatable where Self: Service {
+	static func ==(lhs: Self, rhs: Self) -> Bool {
+		return lhs.identifier == rhs.identifier
+	}
+
+	static func !=(lhs: Self, rhs: Self) -> Bool {
+		return !(lhs == rhs)
+	}
+
+	static func ~=(lhs: Self, rhs: Self) -> Bool {
+		return lhs == rhs
+	}
 }
 
-public func !=(lhs: Service, rhs: Service) -> Bool {
-    return !(lhs == rhs)
-}
-
-public func ~=(lhs: Service, rhs: Service) -> Bool {
-    return lhs == rhs
+@available(iOS 13.0, *)
+public extension Identifiable where Self: Service {
+	var id: String { identifier }
 }

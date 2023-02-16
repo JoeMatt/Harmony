@@ -13,7 +13,7 @@ import Harmony
 
 @objc(Homework)
 public class Homework: NSManagedObject {
-    var fileURL: URL? {
+    public var fileURL: URL? {
         guard let identifier = self.identifier else { return nil }
         return FileManager.default.documentsDirectory.appendingPathComponent(identifier)
     }

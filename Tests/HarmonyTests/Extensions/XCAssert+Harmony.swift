@@ -18,8 +18,7 @@ func XCTAssertFatalError<T>(_ expression: @escaping @autoclosure () throws -> T,
         _ = try? expression()
     }
 
-    XCTAssert(exception != nil, message, file: file, line: line)
-
+	XCTAssert(exception != nil, message(), file: file, line: line)
 #else
     XCTAssert(false, "XCTAssertFatalError can only be run on x86_64 architecture.", file: file, line: line)
 #endif

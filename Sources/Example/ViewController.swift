@@ -1,27 +1,30 @@
-//
-//  ViewController.swift
-//  Example
-//
-//  Created by Riley Testut on 1/23/18.
-//  Copyright © 2018 Riley Testut. All rights reserved.
-//
+	//
+	//  ViewController.swift
+	//  Example
+	//
+	//  Created by Riley Testut on 1/23/18.
+	//  Copyright © 2018 Riley Testut. All rights reserved.
+	//
 
 import UIKit
 import CoreData
 @_implementationOnly import os.log
+@_implementationOnly import HarmonyTestData
 
 import Harmony
-
 import Roxas
 
-class ViewController: UITableViewController
-{
+class ViewController: UITableViewController {
 	private var persistentContainer: NSPersistentContainer!
 
 	private var changeToken: Data?
 
-	private var syncCoordinators: [SyncCoordinator] = SyncCoordinator]()
-	private var services: [Service] = [Service]()
+	private var syncCoordinators: [SyncCoordinator] = [SyncCoordinator]() {
+		didSet {
+			addObservers()
+		}
+	}
+	private var services: [any Service] { syncCoordinators.map{ $0.service } }
 
 	private lazy var dataSource = self.makeDataSource()
 
@@ -33,46 +36,61 @@ class ViewController: UITableViewController
 
 		self.persistentContainer = RSTPersistentContainer(name: "Harmony Example", managedObjectModel: harmonyModel)
 		self.persistentContainer.loadPersistentStores { (description, error) in
-			os_log("Loaded with error:", error as Any)
+			if let error = error {
+				os_log("Loaded with error: %@", type: .error, error.localizedDescription)
+			}
 
 			self.tableView.dataSource = self.dataSource
 		}
 
 		startSyncCoordinators()
-
-		NotificationCenter.default.addObserver(self, selector: #selector(ViewController.syncDidFinish(_:)), name: SyncCoordinator.didFinishSyncingNotification, object: self.syncCoordinator)
-
+		addObservers()
 	}
 
 	override func didReceiveMemoryWarning() {
 		super.didReceiveMemoryWarning()
-		// Dispose of any resources that can be recreated.
+			// Dispose of any resources that can be recreated.
 	}
 
-	// MARK: Public
-	public func add(service: Service) {
-		guard !services.contains(service) else {
+		// MARK: Public
+	public func add(service: any Service) {
+		guard !services.contains(where: { $0.identifier == service.identifier }) else {
 			return
 		}
 
-		let syncCoordinator = SyncCoordinator(service: service, persistentContainer: self.persistentContainer)
-		services.append(service)
+		let syncCoordinator = SyncCoordinator(service: service,
+											  persistentContainer: self.persistentContainer)
+		syncCoordinators.append(syncCoordinator)
 	}
 
-	// MARK: Private
+		// MARK: Private
 	private func startSyncCoordinators() {
 		syncCoordinators.forEach { syncCoordinator in
 			syncCoordinator.start { (result) in
 				do {
-					_ = try result.value()
-					os.log("Started Sync Coordinator")
+					_ = try result.get()
+					os_log("Started Sync Coordinator")
 				} catch {
-					os.log(.error, "Failed to start Sync Coordinator. \(error.localizedDescription)")
+					os_log("Failed to start Sync Coordinator %@", type: .error, error.localizedDescription)
 				}
 			}
 		}
 	}
 
+	private func addObservers() {
+			// Clear any existing observers
+		removeObservers()
+		syncCoordinators.forEach { syncCoordinator in
+				// Add new observer
+			NotificationCenter.default.addObserver(self, selector: #selector(ViewController.syncDidFinish(_:)), name: SyncCoordinator.didFinishSyncingNotification, object: syncCoordinator)
+		}
+	}
+
+	private func removeObservers() {
+		syncCoordinators.forEach { syncCoordinator in
+			NotificationCenter.default.removeObserver(self, name: SyncCoordinator.didFinishSyncingNotification, object: syncCoordinator)
+		}
+	}
 }
 
 private extension ViewController {
@@ -95,15 +113,16 @@ private extension ViewController {
 private extension ViewController {
 	@IBAction func authenticate(_ sender: UIBarButtonItem) {
 		services.forEach { service in
-//#if canImport(Harmony_Drive)
-//		DriveService.shared.authenticate(withPresentingViewController: self) { (result) in
-//			switch result
-//			{
-//			case .success: os_log("Authentication successful")
-//			case .failure(let error): os_log(error.localizedDescription)
-//			}
-//		}
-//#endif
+			// TODO: Add protocol/method to services to call here
+				//#if canImport(Harmony_Drive)
+				//		DriveService.shared.authenticate(withPresentingViewController: self) { (result) in
+				//			switch result
+				//			{
+				//			case .success: os_log("Authentication successful")
+				//			case .failure(let error): os_log(error.localizedDescription)
+				//			}
+				//		}
+				//#endif
 
 		}
 	}
@@ -128,28 +147,27 @@ private extension ViewController {
 	}
 
 	@IBAction func sync(_ sender: UIBarButtonItem) {
-		self.syncCoordinator.sync()
+		syncCoordinators.forEach { syncCoordinator in
+			syncCoordinator.sync()
+		}
 	}
 
 	@objc func syncDidFinish(_ notification: Notification) {
-		guard let result = notification.userInfo?[SyncCoordinator.syncResultKey] as? Result<[Result<Void>]> else { return }
+		typealias ResultType = Result<[Record<NSManagedObject> : Result<Void, RecordError>], SyncError>
+		guard let result = notification.userInfo?[SyncCoordinator.syncResultKey] as? ResultType else { return }
 
 		do {
-			_ = try result.value()
-
+			_ = try result.get()
 			os_log("Sync Succeeded", type: .info)
 		}
-		catch
-		{
-			os_log("Sync Failed: %@", type:.error, error)
+		catch {
+			os_log("Sync Failed: %@", type:.error, error.localizedDescription)
 		}
 	}
 }
 
-extension ViewController
-{
-	override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath)
-	{
+extension ViewController {
+	override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
 		let homework = self.dataSource.item(at: indexPath)
 
 		self.persistentContainer.performBackgroundTask { (context) in
@@ -160,8 +178,7 @@ extension ViewController
 		}
 	}
 
-	override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath)
-	{
+	override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
 		guard editingStyle == .delete else { return }
 
 		let homework = self.dataSource.item(at: indexPath)

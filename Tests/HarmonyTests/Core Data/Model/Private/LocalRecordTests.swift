@@ -8,6 +8,7 @@
 
 import XCTest
 @testable import Harmony
+@testable @_implementationOnly import HarmonyTestData
 
 import CoreData
 

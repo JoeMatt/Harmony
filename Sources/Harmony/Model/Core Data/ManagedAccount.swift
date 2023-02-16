@@ -23,7 +23,7 @@ class ManagedAccount: NSManagedObject {
         super.init(entity: entity, insertInto: context)
     }
 
-    init(account: Account, service: Service, context: NSManagedObjectContext) {
+	init(account: Account, service: any Service, context: NSManagedObjectContext) {
         super.init(entity: ManagedAccount.entity(), insertInto: context)
 
         self.name = account.name

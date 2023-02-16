@@ -9,9 +9,10 @@ let package = Package(
     platforms: [
         .iOS(.v12),
         .tvOS(.v12),
-        .macCatalyst(.v13)
-    ],
-    products: [
+        .macCatalyst(.v13),
+		.macOS(.v12)
+	],
+	products: [
         .library(
             name: "Harmony",
             targets: ["Harmony"]
@@ -26,7 +27,7 @@ let package = Package(
             type: .static,
             targets: ["Harmony"]
         ),
-//        .executable(name: "Example", targets: ["Example"])
+        .executable(name: "Example", targets: ["Example"])
     ],
     dependencies: [
          .package(url: "https://github.com/JoeMatt/Roxas.git", from: "1.1.1"),
@@ -51,21 +52,29 @@ let package = Package(
                 .linkedFramework("CoreData")
             ]
         ),
-//        .executableTarget(
-//            name: "Example",
-//            dependencies: ["Harmony", "Roxas"],
-//            resources: [
-//                .copy("Resources/GoogleService-Info.plist"),
-//                .process("Resources/UIKit")
-//            ],
-//            linkerSettings: [
-//                .linkedFramework("UIKit"),
-//                .linkedFramework("CoreData")
-//            ]
-//        ),
+		// Tests
+		.target(
+			name: "HarmonyTestData",
+			dependencies: ["Harmony"],
+			resources: [
+				.process("Resources/")
+			]
+	   ),
+        .executableTarget(
+            name: "Example",
+            dependencies: [ "Harmony", "HarmonyTestData" ],
+            resources: [
+                .copy("Resources/GoogleService-Info.plist"),
+                .process("Resources/UIKit")
+            ],
+            linkerSettings: [
+                .linkedFramework("UIKit"),
+                .linkedFramework("CoreData")
+            ]
+        ),
         .testTarget(
             name: "HarmonyTests",
-            dependencies: ["Harmony", "CwlPreconditionTesting"]
+            dependencies: ["Harmony", "CwlPreconditionTesting", "HarmonyTestData"]
         )
     ]
 )
