@@ -17,7 +17,7 @@ public protocol RecordEntry: NSManagedObject {
 
 public extension RecordEntry {
     var recordID: RecordID {
-        let recordID = RecordID(type: self.recordedObjectType, identifier: self.recordedObjectIdentifier)
+        let recordID = RecordID(type: recordedObjectType, identifier: recordedObjectIdentifier)
         return recordID
     }
 }

@@ -6,12 +6,12 @@
 //  Copyright © 2017 Riley Testut. All rights reserved.
 //
 
-import Foundation
 import CoreData
-import Roxas
+import Foundation
 @_implementationOnly import os.log
+import Roxas
 
-fileprivate extension CodingUserInfoKey {
+private extension CodingUserInfoKey {
     static let isEncodingForHashing = CodingUserInfoKey(rawValue: "isEncodingForHashing")!
 }
 
@@ -33,8 +33,8 @@ extension LocalRecord {
             self.stringValue = stringValue
         }
 
-        init?(intValue: Int) {
-            return nil
+        init?(intValue _: Int) {
+            nil
         }
     }
 }
@@ -55,29 +55,29 @@ public class LocalRecord: RecordRepresentation, Codable {
 
     var version: Version? {
         get {
-            guard let identifier = self.versionIdentifier, let date = self.versionDate else { return nil }
+            guard let identifier = versionIdentifier, let date = versionDate else { return nil }
 
             let version = Version(identifier: identifier, date: date)
             return version
         }
         set {
-            self.versionIdentifier = newValue?.identifier
-            self.versionDate = newValue?.date
+            versionIdentifier = newValue?.identifier
+            versionDate = newValue?.date
         }
     }
 
     var recordedObject: Syncable? {
-        return self.resolveRecordedObject()
+        resolveRecordedObject()
     }
 
     var recordedObjectID: NSManagedObjectID? {
-        return self.resolveRecordedObjectID()
+        resolveRecordedObjectID()
     }
 
     var downloadedFiles: Set<File>?
     var remoteRelationships: [String: RecordID]?
 
-    private override init(entity: NSEntityDescription, insertInto context: NSManagedObjectContext?) {
+    override private init(entity: NSEntityDescription, insertInto context: NSManagedObjectContext?) {
         super.init(entity: entity, insertInto: context)
     }
 
@@ -86,7 +86,7 @@ public class LocalRecord: RecordRepresentation, Codable {
 
         do {
             // Must be after super.init() or else Swift compiler will crash (as of Swift 4.0)
-            try self.configure(with: recordedObject)
+            try configure(with: recordedObject)
         } catch {
             // Initialization failed, so remove self from managed object context.
             context.delete(self)
@@ -161,15 +161,15 @@ public class LocalRecord: RecordRepresentation, Codable {
 
             // Pass in non-nil string to prevent calculating hashes,
             // which would potentially rely on not-yet-connected relationships.
-            try self.configure(with: recordedObject, sha1Hash: sha1Hash ?? "")
+            try configure(with: recordedObject, sha1Hash: sha1Hash ?? "")
 
             let remoteFiles = try container.decodeIfPresent(Set<RemoteFile>.self, forKey: .files) ?? []
             let filteredRemoteFiles = remoteFiles.filter { !$0.identifier.isEmpty && !$0.remoteIdentifier.isEmpty }
 
             self.remoteFiles = Set(filteredRemoteFiles)
-            self.remoteRelationships = try container.decodeIfPresent([String: RecordID].self, forKey: .relationships)
+            remoteRelationships = try container.decodeIfPresent([String: RecordID].self, forKey: .relationships)
         } catch {
-            self.removeFromContext(recordedObject: tempRecordedObject)
+            removeFromContext(recordedObject: tempRecordedObject)
 
             throw error
         }
@@ -185,10 +185,10 @@ public class LocalRecord: RecordRepresentation, Codable {
             return syncableType
         }
 
-        try container.encode(sanitized(self.recordedObjectType), forKey: .type)
-        try container.encode(self.recordedObjectIdentifier, forKey: .identifier)
+        try container.encode(sanitized(recordedObjectType), forKey: .type)
+        try container.encode(recordedObjectIdentifier, forKey: .identifier)
 
-        guard let recordedObject = self.recordedObject else { throw ValidationError.nilRecordedObject }
+        guard let recordedObject = recordedObject else { throw ValidationError.nilRecordedObject }
 
         var recordContainer = container.nestedContainer(keyedBy: AnyKey.self, forKey: .record)
 
@@ -210,18 +210,18 @@ public class LocalRecord: RecordRepresentation, Codable {
             }
         }
 
-        for (key, value) in self.additionalProperties ?? [:] {
+        for (key, value) in additionalProperties ?? [:] {
             // Only include additional properties that don't conflict with existing ones.
             guard !syncableKeys.contains(key) else { continue }
             try recordContainer.encode(AnyCodable(value), forKey: AnyKey(stringValue: key))
         }
 
-        let relationships = recordedObject.syncableRelationshipObjects.mapValues { (relationshipObject) -> RecordID? in
-            guard let identifier = relationshipObject.syncableIdentifier else { return nil }
+        let relationships = recordedObject.syncableRelationshipObjects.mapValues { relationshipObject -> RecordID? in
+                guard let identifier = relationshipObject.syncableIdentifier else { return nil }
 
-            let relationship = RecordID(type: sanitized(relationshipObject.syncableType), identifier: identifier)
-            return relationship
-        }
+                let relationship = RecordID(type: sanitized(relationshipObject.syncableType), identifier: identifier)
+                return relationship
+            }
 
         try container.encode(relationships, forKey: .relationships)
 
@@ -243,21 +243,21 @@ public class LocalRecord: RecordRepresentation, Codable {
         } else {
             // If encoding for upload, encode self.remoteFiles, as well as our sha1Hash.
 
-            try container.encode(self.remoteFiles, forKey: .files)
-            try container.encodeIfPresent(self.sha1Hash, forKey: .sha1Hash)
+            try container.encode(remoteFiles, forKey: .files)
+            try container.encodeIfPresent(sha1Hash, forKey: .sha1Hash)
         }
     }
 
-    public override func awakeFromInsert() {
+    override public func awakeFromInsert() {
         super.awakeFromInsert()
 
-        self.modificationDate = Date()
+        modificationDate = Date()
     }
 }
 
 extension LocalRecord {
     @nonobjc class func fetchRequest() -> NSFetchRequest<LocalRecord> {
-        return NSFetchRequest<LocalRecord>(entityName: "LocalRecord")
+        NSFetchRequest<LocalRecord>(entityName: "LocalRecord")
     }
 
     func configure(with recordedObject: Syncable, sha1Hash: String? = nil) throws {
@@ -270,14 +270,14 @@ extension LocalRecord {
             try context.obtainPermanentIDs(for: [recordedObject])
         }
 
-        self.recordedObjectType = recordedObject.syncableType
+        recordedObjectType = recordedObject.syncableType
         self.recordedObjectIdentifier = recordedObjectIdentifier
-        self.recordedObjectURI = recordedObject.objectID.uriRepresentation()
+        recordedObjectURI = recordedObject.objectID.uriRepresentation()
 
         if let sha1Hash = sha1Hash {
             self.sha1Hash = sha1Hash
         } else {
-            try self.updateSHA1Hash()
+            try updateSHA1Hash()
         }
     }
 
@@ -297,7 +297,8 @@ private extension LocalRecord {
     @NSManaged private var primitiveRecordedObjectURI: URL?
 
     func resolveRecordedObjectID() -> NSManagedObjectID? {
-        guard let persistentStoreCoordinator = self.managedObjectContext?.persistentStoreCoordinator else {
+        guard let persistentStoreCoordinator = managedObjectContext?.persistentStoreCoordinator
+        else {
             fatalError("LocalRecord's associated NSPersistentStoreCoordinator must not be nil to retrieve external NSManagedObjectID.")
         }
 
@@ -305,19 +306,20 @@ private extension LocalRecord {
         // To prevent edge-case crashes, we manually check if it is nil first.
         // (We don't just turn it into optional via Optional(self.recordedObjectURI) because
         // that crashes when bridging from ObjC).
-        guard self.primitiveRecordedObjectURI != nil else { return nil }
+        guard primitiveRecordedObjectURI != nil else { return nil }
 
         // Nil objectID = persistent store does not exist.
-        let objectID = persistentStoreCoordinator.managedObjectID(forURIRepresentation: self.recordedObjectURI)
+        let objectID = persistentStoreCoordinator.managedObjectID(forURIRepresentation: recordedObjectURI)
         return objectID
     }
 
     func resolveRecordedObject() -> Syncable? {
-        guard let managedObjectContext = self.managedObjectContext else {
+        guard let managedObjectContext = managedObjectContext
+        else {
             fatalError("LocalRecord's managedObjectContext must not be nil to retrieve external NSManagedObject.")
         }
 
-        guard let objectID = self.recordedObjectID else { return nil }
+        guard let objectID = recordedObjectID else { return nil }
 
         do {
             let managedObject = try managedObjectContext.existingObject(with: objectID) as? Syncable
@@ -335,7 +337,7 @@ private extension LocalRecord {
 extension LocalRecord {
     // Removes a LocalRecord that failed to completely download/parse from its managed object context.
     func removeFromContext(recordedObject: NSManagedObject? = nil) {
-        guard let context = self.managedObjectContext else { return }
+        guard let context = managedObjectContext else { return }
 
         context.delete(self)
 

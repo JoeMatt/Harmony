@@ -6,8 +6,8 @@
 //  Copyright © 2018 Riley Testut. All rights reserved.
 //
 
-import Foundation
 import CoreData
+import Foundation
 
 @objc(ManagedRecord)
 public class ManagedRecord: NSManagedObject, RecordEntry {
@@ -23,13 +23,13 @@ public class ManagedRecord: NSManagedObject, RecordEntry {
     @NSManaged public var localRecord: LocalRecord?
     @NSManaged public var remoteRecord: RemoteRecord?
 
-    private override init(entity: NSEntityDescription, insertInto context: NSManagedObjectContext?) {
+    override private init(entity: NSEntityDescription, insertInto context: NSManagedObjectContext?) {
         super.init(entity: entity, insertInto: context)
     }
 }
 
 extension ManagedRecord {
     @nonobjc class func fetchRequest() -> NSFetchRequest<ManagedRecord> {
-        return NSFetchRequest<ManagedRecord>(entityName: "ManagedRecord")
+        NSFetchRequest<ManagedRecord>(entityName: "ManagedRecord")
     }
 }

@@ -8,8 +8,8 @@
 
 import CoreData
 
-extension ManagedRecord {
-    fileprivate enum SyncAction {
+private extension ManagedRecord {
+    enum SyncAction {
         case none
         case upload
         case download
@@ -56,29 +56,29 @@ extension ManagedRecord {
     class var uploadRecordsPredicate: NSPredicate {
         let predicate = self.predicate(for: .upload)
 
-        let compoundPredicate = NSCompoundPredicate(andPredicateWithSubpredicates: [predicate, self.syncableRecordsPredicate])
+        let compoundPredicate = NSCompoundPredicate(andPredicateWithSubpredicates: [predicate, syncableRecordsPredicate])
         return compoundPredicate
     }
 
     class var downloadRecordsPredicate: NSPredicate {
         let predicate = self.predicate(for: .download)
 
-        let compoundPredicate = NSCompoundPredicate(andPredicateWithSubpredicates: [predicate, self.syncableRecordsPredicate])
+        let compoundPredicate = NSCompoundPredicate(andPredicateWithSubpredicates: [predicate, syncableRecordsPredicate])
         return compoundPredicate
     }
 
     class var deleteRecordsPredicate: NSPredicate {
         let predicate = self.predicate(for: .delete)
 
-        let compoundPredicate = NSCompoundPredicate(andPredicateWithSubpredicates: [predicate, self.syncableRecordsPredicate])
+        let compoundPredicate = NSCompoundPredicate(andPredicateWithSubpredicates: [predicate, syncableRecordsPredicate])
         return compoundPredicate
     }
 
     class var conflictRecordsPredicate: NSPredicate {
         let predicate = self.predicate(for: .conflict)
-        let allConflictsPredicate = NSCompoundPredicate(orPredicateWithSubpredicates: [predicate, self.conflictedUploadsPredicate])
+        let allConflictsPredicate = NSCompoundPredicate(orPredicateWithSubpredicates: [predicate, conflictedUploadsPredicate])
 
-        let compoundPredicate = NSCompoundPredicate(andPredicateWithSubpredicates: [allConflictsPredicate, self.syncableRecordsPredicate])
+        let compoundPredicate = NSCompoundPredicate(andPredicateWithSubpredicates: [allConflictsPredicate, syncableRecordsPredicate])
         return compoundPredicate
     }
 
@@ -113,9 +113,9 @@ private extension ManagedRecord {
         // "Hack" to allow compiler to tell us if we miss any potential cases.
         // We make an array of all possible combinations of statues, then filter out all combinations that don't result in the sync action we want.
         let allCases: [RecordStatus?] = RecordStatus.allCases + [nil]
-        let statuses = allCases.flatMap { (localStatus) in allCases.map { (localStatus, $0) } }
+        let statuses = allCases.flatMap { localStatus in allCases.map { (localStatus, $0) } }
 
-        let filteredStatuses = statuses.filter { (localStatus, remoteStatus) in
+        let filteredStatuses = statuses.filter { localStatus, remoteStatus in
             let action = SyncAction(localStatus: localStatus, remoteStatus: remoteStatus)
             return action == syncAction
         }
@@ -124,7 +124,7 @@ private extension ManagedRecord {
     }
 
     class func predicate(statuses: [(localStatus: RecordStatus?, remoteStatus: RecordStatus?)]) -> NSPredicate {
-        let predicates = statuses.map { (localStatus, remoteStatus) -> NSPredicate in
+        let predicates = statuses.map { localStatus, remoteStatus -> NSPredicate in
             let predicate: NSPredicate
 
             switch (localStatus, remoteStatus) {

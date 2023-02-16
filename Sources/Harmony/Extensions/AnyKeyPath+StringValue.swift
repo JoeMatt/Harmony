@@ -10,6 +10,6 @@ import Foundation
 
 extension AnyKeyPath {
     var stringValue: String? {
-        return self._kvcKeyPathString
+        _kvcKeyPathString
     }
 }

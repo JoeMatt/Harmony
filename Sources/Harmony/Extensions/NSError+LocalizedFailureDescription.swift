@@ -10,7 +10,7 @@ import Foundation
 
 extension NSError {
     var localizedFailureDescription: String? {
-        let description = self.userInfo[NSLocalizedFailureErrorKey] as? String
+        let description = userInfo[NSLocalizedFailureErrorKey] as? String
         return description
     }
 }

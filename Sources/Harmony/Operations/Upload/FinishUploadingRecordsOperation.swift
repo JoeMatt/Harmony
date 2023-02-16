@@ -6,8 +6,8 @@
 //  Copyright © 2018 Riley Testut. All rights reserved.
 //
 
-import Foundation
 import CoreData
+import Foundation
 
 class FinishUploadingRecordsOperation: Operation<[AnyRecord: Result<RemoteRecord, RecordError>], Error> {
     let results: [AnyRecord: Result<RemoteRecord, RecordError>]
@@ -15,12 +15,12 @@ class FinishUploadingRecordsOperation: Operation<[AnyRecord: Result<RemoteRecord
     private let managedObjectContext: NSManagedObjectContext
 
     override var isAsynchronous: Bool {
-        return true
+        true
     }
 
     init(results: [AnyRecord: Result<RemoteRecord, RecordError>], coordinator: SyncCoordinator, context: NSManagedObjectContext) {
         self.results = results
-        self.managedObjectContext = context
+        managedObjectContext = context
 
         super.init(coordinator: coordinator)
     }
@@ -28,13 +28,13 @@ class FinishUploadingRecordsOperation: Operation<[AnyRecord: Result<RemoteRecord
     override func main() {
         super.main()
 
-        self.managedObjectContext.perform {
+        managedObjectContext.perform {
             // Unlock records that were previously locked, and no longer have relationships that have not yet been uploaded.
 
             var results = self.results
 
             do {
-                let records = results.compactMap { (record, result) -> AnyRecord? in
+                let records = results.compactMap { record, result -> AnyRecord? in
                     guard record.shouldLockWhenUploading else { return nil }
                     guard let _ = try? result.get() else { return nil }
 
@@ -56,40 +56,40 @@ class FinishUploadingRecordsOperation: Operation<[AnyRecord: Result<RemoteRecord
 
                 let dispatchGroup = DispatchGroup()
 
-                let operations = recordsToUnlock.compactMap { (record) -> UpdateRecordMetadataOperation? in
-                    record.perform(in: self.managedObjectContext) { (managedRecord) in
-                        do {
-                            if managedRecord.remoteRecord == nil, let result = results[record], let remoteRecord = try? result.get() {
-                                managedRecord.remoteRecord = remoteRecord
-                            }
-
-                            let record = AnyRecord(managedRecord)
-
-                            let operation = try UpdateRecordMetadataOperation(record: record, coordinator: self.coordinator, context: self.managedObjectContext)
-                            operation.metadata[.isLocked] = NSNull()
-                            operation.resultHandler = { (result) in
-                                do {
-                                    try result.get()
-                                } catch {
-                                    // Mark record for re-uploading later to unlock remote record.
-                                    managedRecord.localRecord?.status = .updated
-
-                                    results[record] = .failure(RecordError(record, error))
+                let operations = recordsToUnlock.compactMap { record -> UpdateRecordMetadataOperation? in
+                        record.perform(in: self.managedObjectContext) { managedRecord in
+                            do {
+                                if managedRecord.remoteRecord == nil, let result = results[record], let remoteRecord = try? result.get() {
+                                    managedRecord.remoteRecord = remoteRecord
                                 }
 
-                                dispatchGroup.leave()
+                                let record = AnyRecord(managedRecord)
+
+                                let operation = try UpdateRecordMetadataOperation(record: record, coordinator: self.coordinator, context: self.managedObjectContext)
+                                operation.metadata[.isLocked] = NSNull()
+                                operation.resultHandler = { result in
+                                    do {
+                                        try result.get()
+                                    } catch {
+                                        // Mark record for re-uploading later to unlock remote record.
+                                        managedRecord.localRecord?.status = .updated
+
+                                        results[record] = .failure(RecordError(record, error))
+                                    }
+
+                                    dispatchGroup.leave()
+                                }
+
+                                dispatchGroup.enter()
+
+                                return operation
+                            } catch {
+                                results[record] = .failure(RecordError(record, error))
+
+                                return nil
                             }
-
-                            dispatchGroup.enter()
-
-                            return operation
-                        } catch {
-                            results[record] = .failure(RecordError(record, error))
-
-                            return nil
                         }
                     }
-                }
 
                 self.operationQueue.addOperations(operations, waitUntilFinished: false)
 

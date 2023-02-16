@@ -6,14 +6,13 @@
 //  Copyright © 2018 Riley Testut. All rights reserved.
 //
 
-import XCTest
 import CoreData
+import XCTest
 @testable @_implementationOnly import HarmonyTestData
 
 @testable import Harmony
 
-class SyncableTests: HarmonyTestCase {
-}
+class SyncableTests: HarmonyTestCase {}
 
 extension SyncableTests {
     func testSyncableType() {
@@ -28,8 +27,8 @@ extension SyncableTests {
         class TestManagedObject: NSManagedObject, Syncable {
             @objc var identifier = "SyncableTypeInvalid"
 
-            class var syncablePrimaryKey: AnyKeyPath { return \TestManagedObject.identifier }
-            var syncableKeys: Set<AnyKeyPath> { return [] }
+            class var syncablePrimaryKey: AnyKeyPath { \TestManagedObject.identifier }
+            var syncableKeys: Set<AnyKeyPath> { [] }
         }
 
         let managedObject = TestManagedObject()
@@ -41,8 +40,8 @@ extension SyncableTests {
         class TestManagedObject: NSManagedObject, Syncable {
             @objc var identifier = "SyncableFiles"
 
-            class var syncablePrimaryKey: AnyKeyPath { return \TestManagedObject.identifier }
-            var syncableKeys: Set<AnyKeyPath> { return [] }
+            class var syncablePrimaryKey: AnyKeyPath { \TestManagedObject.identifier }
+            var syncableKeys: Set<AnyKeyPath> { [] }
         }
 
         let managedObject = TestManagedObject()
@@ -56,8 +55,8 @@ extension SyncableTests {
         class TestManagedObject: NSManagedObject, Syncable {
             @objc var identifier = "SyncableIdentifier"
 
-            class var syncablePrimaryKey: AnyKeyPath { return \TestManagedObject.identifier }
-            var syncableKeys: Set<AnyKeyPath> { return [] }
+            class var syncablePrimaryKey: AnyKeyPath { \TestManagedObject.identifier }
+            var syncableKeys: Set<AnyKeyPath> { [] }
         }
 
         let professor = Professor.make(identifier: "identifier")
@@ -71,8 +70,8 @@ extension SyncableTests {
         class TestManagedObject: NSManagedObject, Syncable {
             @objc var identifier: String?
 
-            class var syncablePrimaryKey: AnyKeyPath { return \TestManagedObject.identifier }
-            var syncableKeys: Set<AnyKeyPath> { return [] }
+            class var syncablePrimaryKey: AnyKeyPath { \TestManagedObject.identifier }
+            var syncableKeys: Set<AnyKeyPath> { [] }
         }
 
         let managedObject = TestManagedObject()
@@ -92,8 +91,8 @@ extension SyncableTests {
         class IntIdentifierManagedObject: NSManagedObject, Syncable {
             @objc var identifier = 22
 
-            class var syncablePrimaryKey: AnyKeyPath { return \IntIdentifierManagedObject.identifier }
-            var syncableKeys: Set<AnyKeyPath> { return [] }
+            class var syncablePrimaryKey: AnyKeyPath { \IntIdentifierManagedObject.identifier }
+            var syncableKeys: Set<AnyKeyPath> { [] }
         }
 
         let managedObject = IntIdentifierManagedObject()
@@ -105,8 +104,8 @@ extension SyncableTests {
         class NonObjcIdentifierManagedObject: NSManagedObject, Syncable {
             var identifier = "SyncableIdentifier"
 
-            class var syncablePrimaryKey: AnyKeyPath { return \NonObjcIdentifierManagedObject.identifier }
-            var syncableKeys: Set<AnyKeyPath> { return [] }
+            class var syncablePrimaryKey: AnyKeyPath { \NonObjcIdentifierManagedObject.identifier }
+            var syncableKeys: Set<AnyKeyPath> { [] }
         }
 
         let managedObject = NonObjcIdentifierManagedObject()
@@ -118,8 +117,8 @@ extension SyncableTests {
         class NonObjcIntIdentifierManagedObject: NSManagedObject, Syncable {
             var identifier = 21
 
-            class var syncablePrimaryKey: AnyKeyPath { return \NonObjcIntIdentifierManagedObject.identifier }
-            var syncableKeys: Set<AnyKeyPath> { return [] }
+            class var syncablePrimaryKey: AnyKeyPath { \NonObjcIntIdentifierManagedObject.identifier }
+            var syncableKeys: Set<AnyKeyPath> { [] }
         }
 
         let managedObject = NonObjcIntIdentifierManagedObject()

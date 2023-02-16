@@ -6,11 +6,11 @@
 //  Copyright © 2018 Riley Testut. All rights reserved.
 //
 
-import Foundation
 import CoreData
+import Foundation
 
-import Roxas
 @_implementationOnly import os.log
+import Roxas
 
 class DownloadRecordOperation: RecordOperation<LocalRecord> {
     var version: Version?
@@ -19,21 +19,21 @@ class DownloadRecordOperation: RecordOperation<LocalRecord> {
         try super.init(record: record, coordinator: coordinator, context: context)
 
         // Record itself = 1 unit, files = 3 units.
-        self.progress.totalUnitCount = 4
+        progress.totalUnitCount = 4
     }
 
     override func main() {
         super.main()
 
         if UserDefaults.standard.isDebugModeEnabled {
-			os_log("Started downloading record: %@", type: .info, String(describing: self.record.recordID))
+            os_log("Started downloading record: %@", type: .info, String(describing: record.recordID))
         }
 
-        self.downloadRecord { (result) in
+        downloadRecord { result in
             do {
                 let localRecord = try result.get()
 
-                self.downloadFiles(for: localRecord) { (result) in
+                self.downloadFiles(for: localRecord) { result in
                     self.managedObjectContext.perform {
                         do {
                             let files = try result.get()
@@ -60,18 +60,18 @@ class DownloadRecordOperation: RecordOperation<LocalRecord> {
         super.finish()
 
         if UserDefaults.standard.isDebugModeEnabled {
-			os_log("Finished downloading record: %@", type: .info, "\(self.record.recordID)")
+            os_log("Finished downloading record: %@", type: .info, "\(record.recordID)")
         }
     }
 }
 
 private extension DownloadRecordOperation {
     func finishDownload() {
-        if self.isBatchOperation {
-            self.finish()
+        if isBatchOperation {
+            finish()
         } else {
-            let operation = FinishDownloadingRecordsOperation(results: [self.record: self.result!], coordinator: self.coordinator, context: self.managedObjectContext)
-            operation.resultHandler = { (result) in
+            let operation = FinishDownloadingRecordsOperation(results: [record: result!], coordinator: coordinator, context: managedObjectContext)
+            operation.resultHandler = { result in
                 do {
                     let results = try result.get()
 
@@ -90,12 +90,12 @@ private extension DownloadRecordOperation {
                 self.finish()
             }
 
-            self.operationQueue.addOperation(operation)
+            operationQueue.addOperation(operation)
         }
     }
 
     func downloadRecord(completionHandler: @escaping (Result<LocalRecord, RecordError>) -> Void) {
-        self.record.perform { (managedRecord) -> Void in
+        record.perform { managedRecord in
             guard let remoteRecord = managedRecord.remoteRecord else { return completionHandler(.failure(RecordError(self.record, ValidationError.nilRemoteRecord))) }
 
             let version: Version
@@ -103,7 +103,8 @@ private extension DownloadRecordOperation {
             if let recordVersion = self.version {
                 version = recordVersion
             } else if remoteRecord.isLocked {
-                guard let previousVersion = remoteRecord.previousUnlockedVersion else {
+                guard let previousVersion = remoteRecord.previousUnlockedVersion
+                else {
                     return completionHandler(.failure(RecordError.locked(self.record)))
                 }
 
@@ -112,10 +113,10 @@ private extension DownloadRecordOperation {
                 version = remoteRecord.version
             }
 
-            let operation = ServiceOperation(coordinator: self.coordinator) { (completionHandler) in
-                return self.service.download(self.record, version: version, context: self.managedObjectContext, completionHandler: completionHandler)
+            let operation = ServiceOperation(coordinator: self.coordinator) { completionHandler in
+                self.service.download(self.record, version: version, context: self.managedObjectContext, completionHandler: completionHandler)
             }
-            operation.resultHandler = { (result) in
+            operation.resultHandler = { result in
                 do {
                     let localRecord = try result.get()
                     localRecord.status = .normal
@@ -139,7 +140,7 @@ private extension DownloadRecordOperation {
     func downloadFiles(for localRecord: LocalRecord, completionHandler: @escaping (Result<Set<File>, RecordError>) -> Void) {
         // Retrieve files from self.record.localRecord because file URLs may depend on relationships that haven't been downloaded yet.
         // If self.record.localRecord doesn't exist, we can just assume we should download all files.
-        let filesByIdentifier = self.record.perform { (managedRecord) -> [String: File]? in
+        let filesByIdentifier = record.perform { managedRecord -> [String: File]? in
             guard let recordedObject = managedRecord.localRecord?.recordedObject else { return nil }
 
             let dictionary = Dictionary(recordedObject.syncableFiles, keyedBy: \.identifier)
@@ -147,7 +148,7 @@ private extension DownloadRecordOperation {
         }
 
         // Suspend operation queue to prevent download operations from starting automatically.
-        self.operationQueue.isSuspended = true
+        operationQueue.isSuspended = true
 
         let filesProgress = Progress.discreteProgress(totalUnitCount: 0)
 
@@ -160,7 +161,8 @@ private extension DownloadRecordOperation {
             do {
                 // If there _are_ cached files, compare hashes to ensure we're not unnecessarily downloading unchanged files.
                 if let filesByIdentifier = filesByIdentifier {
-                    guard let localFile = filesByIdentifier[remoteFile.identifier] else {
+                    guard let localFile = filesByIdentifier[remoteFile.identifier]
+                    else {
                         throw FileError.unknownFile(remoteFile.identifier)
                     }
 
@@ -182,12 +184,12 @@ private extension DownloadRecordOperation {
 
                 dispatchGroup.enter()
 
-                let operation = ServiceOperation<File, FileError>(coordinator: self.coordinator) { (completionHandler) in
-                    return self.managedObjectContext.performAndWait {
-                        return self.service.download(remoteFile, completionHandler: completionHandler)
+                let operation = ServiceOperation<File, FileError>(coordinator: coordinator) { completionHandler in
+                        self.managedObjectContext.performAndWait {
+                            self.service.download(remoteFile, completionHandler: completionHandler)
+                        }
                     }
-                }
-                operation.resultHandler = { (result) in
+                operation.resultHandler = { result in
                     do {
                         let file = try result.get()
                         files.insert(file)
@@ -201,16 +203,16 @@ private extension DownloadRecordOperation {
                 filesProgress.totalUnitCount += 1
                 filesProgress.addChild(operation.progress, withPendingUnitCount: 1)
 
-                self.operationQueue.addOperation(operation)
+                operationQueue.addOperation(operation)
             } catch {
                 errors.append(FileError(remoteFile.identifier, error))
             }
         }
 
         if errors.isEmpty {
-            self.progress.addChild(filesProgress, withPendingUnitCount: 3)
+            progress.addChild(filesProgress, withPendingUnitCount: 3)
 
-            self.operationQueue.isSuspended = false
+            operationQueue.isSuspended = false
         }
 
         dispatchGroup.notify(queue: .global()) {

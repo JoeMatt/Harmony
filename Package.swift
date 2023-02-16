@@ -76,5 +76,6 @@ let package = Package(
             name: "HarmonyTests",
             dependencies: ["Harmony", "CwlPreconditionTesting", "HarmonyTestData"]
         )
-    ]
+    ],
+	swiftLanguageVersions: [.v5]
 )

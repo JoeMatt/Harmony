@@ -8,8 +8,8 @@
 
 import CoreData
 
-import Roxas
 @_implementationOnly import os.log
+import Roxas
 
 class UploadRecordOperation: RecordOperation<RemoteRecord> {
     private var localRecord: LocalRecord!
@@ -17,8 +17,9 @@ class UploadRecordOperation: RecordOperation<RemoteRecord> {
     required init<T: NSManagedObject>(record: Record<T>, coordinator: SyncCoordinator, context: NSManagedObjectContext) throws {
         try super.init(record: record, coordinator: coordinator, context: context)
 
-        try self.record.perform { (managedRecord) in
-            guard let localRecord = managedRecord.localRecord else {
+        try self.record.perform { managedRecord in
+            guard let localRecord = managedRecord.localRecord
+            else {
                 throw RecordError(self.record, ValidationError.nilLocalRecord)
             }
             self.localRecord = localRecord
@@ -32,11 +33,11 @@ class UploadRecordOperation: RecordOperation<RemoteRecord> {
         super.main()
 
         if UserDefaults.standard.isDebugModeEnabled {
-			os_log("Started uploading record: %@", type: .info, "\(self.record.recordID)")
+            os_log("Started uploading record: %@", type: .info, "\(record.recordID)")
         }
 
         func upload() {
-            self.managedObjectContext.perform {
+            managedObjectContext.perform {
                 do {
                     let localRecord = self.localRecord.in(self.managedObjectContext)
                     try localRecord.recordedObject?.prepareForSync(self.record)
@@ -47,7 +48,7 @@ class UploadRecordOperation: RecordOperation<RemoteRecord> {
                     return
                 }
 
-                self.uploadFiles() { (result) in
+                self.uploadFiles { result in
                     do {
                         let remoteFiles = try result.get()
 
@@ -62,7 +63,7 @@ class UploadRecordOperation: RecordOperation<RemoteRecord> {
                             localRecord.remoteFiles.insert(remoteFile)
                         }
 
-                        self.upload(localRecord) { (result) in
+                        self.upload(localRecord) { result in
                             self.result = result
                             self.finishUpload()
                         }
@@ -74,11 +75,11 @@ class UploadRecordOperation: RecordOperation<RemoteRecord> {
             }
         }
 
-        if self.isBatchOperation {
+        if isBatchOperation {
             upload()
         } else {
-            let prepareUploadingRecordsOperation = PrepareUploadingRecordsOperation(records: [self.record], coordinator: self.coordinator, context: self.managedObjectContext)
-            prepareUploadingRecordsOperation.resultHandler = { (result) in
+            let prepareUploadingRecordsOperation = PrepareUploadingRecordsOperation(records: [record], coordinator: coordinator, context: managedObjectContext)
+            prepareUploadingRecordsOperation.resultHandler = { result in
                 do {
                     let records = try result.get()
 
@@ -91,7 +92,7 @@ class UploadRecordOperation: RecordOperation<RemoteRecord> {
                 }
             }
 
-            self.operationQueue.addOperation(prepareUploadingRecordsOperation)
+            operationQueue.addOperation(prepareUploadingRecordsOperation)
         }
     }
 
@@ -99,18 +100,18 @@ class UploadRecordOperation: RecordOperation<RemoteRecord> {
         super.finish()
 
         if UserDefaults.standard.isDebugModeEnabled {
-			os_log("Finished uploading record: %@", type: .info, "\(self.record.recordID)")
+            os_log("Finished uploading record: %@", type: .info, "\(record.recordID)")
         }
     }
 }
 
 private extension UploadRecordOperation {
     func finishUpload() {
-        if self.isBatchOperation {
-            self.finish()
+        if isBatchOperation {
+            finish()
         } else {
-            let operation = FinishUploadingRecordsOperation(results: [self.record: self.result!], coordinator: self.coordinator, context: self.managedObjectContext)
-            operation.resultHandler = { (result) in
+            let operation = FinishUploadingRecordsOperation(results: [record: result!], coordinator: coordinator, context: managedObjectContext)
+            operation.resultHandler = { result in
                 do {
                     let results = try result.get()
 
@@ -129,12 +130,12 @@ private extension UploadRecordOperation {
                 self.finish()
             }
 
-            self.operationQueue.addOperation(operation)
+            operationQueue.addOperation(operation)
         }
     }
 
     func uploadFiles(completionHandler: @escaping (Result<Set<RemoteFile>, RecordError>) -> Void) {
-        self.record.perform { (managedRecord) -> Void in
+        record.perform { managedRecord in
             guard let localRecord = managedRecord.localRecord else { return completionHandler(.failure(RecordError(self.record, ValidationError.nilLocalRecord))) }
             guard let recordedObject = localRecord.recordedObject else { return completionHandler(.failure(RecordError(self.record, ValidationError.nilRecordedObject))) }
 
@@ -155,7 +156,8 @@ private extension UploadRecordOperation {
                     let hash = try RSTHasher.sha1HashOfFile(at: file.fileURL)
 
                     let remoteFile = remoteFilesByIdentifier[file.identifier]
-                    guard remoteFile?.sha1Hash != hash else {
+                    guard remoteFile?.sha1Hash != hash
+                    else {
                         // Hash is the same, so don't upload file.
                         self.progress.completedUnitCount += 1
                         continue
@@ -164,18 +166,19 @@ private extension UploadRecordOperation {
                     dispatchGroup.enter()
 
                     // Hash is either different or file hasn't yet been uploaded, so upload file.
-                    let operation = ServiceOperation<RemoteFile, FileError>(coordinator: self.coordinator) { [weak self] (completionHandler) in
-                        guard let self = self else {
-                            completionHandler(.failure(FileError(file.identifier, GeneralError.unknown)))
-                            return nil
-                        }
+                    let operation = ServiceOperation<RemoteFile, FileError>(coordinator: self.coordinator) { [weak self] completionHandler in
+                            guard let self = self
+                            else {
+                                completionHandler(.failure(FileError(file.identifier, GeneralError.unknown)))
+                                return nil
+                            }
 
-                        return localRecord.managedObjectContext?.performAndWait { () -> Progress in
-                            let metadata: [HarmonyMetadataKey: Any] = [.relationshipIdentifier: file.identifier, .sha1Hash: hash]
-                            return self.service.upload(file, for: self.record, metadata: metadata, context: self.managedObjectContext, completionHandler: completionHandler)
+                            return localRecord.managedObjectContext?.performAndWait { () -> Progress in
+                                let metadata: [HarmonyMetadataKey: Any] = [.relationshipIdentifier: file.identifier, .sha1Hash: hash]
+                                return self.service.upload(file, for: self.record, metadata: metadata, context: self.managedObjectContext, completionHandler: completionHandler)
+                            }
                         }
-                    }
-                    operation.resultHandler = { (result) in
+                    operation.resultHandler = { result in
                         do {
                             let remoteFile = try result.get()
                             remoteFiles.insert(remoteFile)
@@ -224,7 +227,7 @@ private extension UploadRecordOperation {
         metadata[.author] = UIDevice.current.name
         metadata[.localizedName] = localRecord.recordedObject?.syncableLocalizedName as Any
 
-        if self.record.shouldLockWhenUploading {
+        if record.shouldLockWhenUploading {
             metadata[.isLocked] = String(true)
         }
 
@@ -244,7 +247,7 @@ private extension UploadRecordOperation {
             func finish(_ localRecord: LocalRecord, _ remoteRecord: RemoteRecord) {
                 remoteRecord.status = .normal
 
-                let localRecord = localRecord.in(self.managedObjectContext)
+                let localRecord = localRecord.in(managedObjectContext)
                 localRecord.version = remoteRecord.version
                 localRecord.status = .normal
                 localRecord.sha1Hash = sha1Hash
@@ -252,9 +255,10 @@ private extension UploadRecordOperation {
                 completionHandler(.success(remoteRecord))
             }
 
-            guard sha1Hash != localRecord.managedRecord?.remoteRecord?.sha1Hash else {
+            guard sha1Hash != localRecord.managedRecord?.remoteRecord?.sha1Hash
+            else {
                 // Hash is the same, so don't upload record.
-                self.progress.completedUnitCount += 1
+                progress.completedUnitCount += 1
 
                 let remoteRecord = localRecord.managedRecord!.remoteRecord! // Safe because sha1Hash must've matched non-nil hash.
                 finish(localRecord, remoteRecord)
@@ -263,18 +267,18 @@ private extension UploadRecordOperation {
             }
 
             let temporaryContext = NSManagedObjectContext(concurrencyType: .privateQueueConcurrencyType)
-            temporaryContext.parent = self.managedObjectContext
+            temporaryContext.parent = managedObjectContext
 
-            self.record.perform(in: temporaryContext) { (managedRecord) in
+            record.perform(in: temporaryContext) { managedRecord in
                 let temporaryLocalRecord = localRecord.in(temporaryContext)
                 managedRecord.localRecord = temporaryLocalRecord
 
                 let record = Record(managedRecord)
 
-                let operation = ServiceOperation(coordinator: self.coordinator) { (completionHandler) in
-                    return self.service.upload(record, metadata: metadata, context: self.managedObjectContext, completionHandler: completionHandler)
-                }
-                operation.resultHandler = { (result) in
+                let operation = ServiceOperation(coordinator: self.coordinator) { completionHandler in
+                        self.service.upload(record, metadata: metadata, context: self.managedObjectContext, completionHandler: completionHandler)
+                    }
+                operation.resultHandler = { result in
                     do {
                         let remoteRecord = try result.get()
                         finish(localRecord, remoteRecord)
@@ -287,9 +291,9 @@ private extension UploadRecordOperation {
                 self.operationQueue.addOperation(operation)
             }
         } catch {
-            self.progress.completedUnitCount += 1
+            progress.completedUnitCount += 1
 
-            completionHandler(.failure(RecordError(self.record, error)))
+            completionHandler(.failure(RecordError(record, error)))
         }
     }
 }

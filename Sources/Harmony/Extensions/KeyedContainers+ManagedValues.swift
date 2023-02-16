@@ -6,8 +6,8 @@
 //  Copyright © 2018 Riley Testut. All rights reserved.
 //
 
-import Foundation
 import CoreData
+import Foundation
 
 private struct AnyNSCodable: Codable {
     var value: NSCoding
@@ -31,19 +31,20 @@ private struct AnyNSCodable: Codable {
     func encode(to encoder: Encoder) throws {
         var container = encoder.singleValueContainer()
 
-        let data = try NSKeyedArchiver.archivedData(withRootObject: self.value, requiringSecureCoding: false)
+        let data = try NSKeyedArchiver.archivedData(withRootObject: value, requiringSecureCoding: false)
         try container.encode(data)
     }
 }
 
 extension KeyedDecodingContainer {
     func decodeManagedValue(forKey key: Key, entity: NSEntityDescription) throws -> Any? {
-        guard let attribute = entity.attributesByName[key.stringValue] else {
+        guard let attribute = entity.attributesByName[key.stringValue]
+        else {
             throw DecodingError.dataCorruptedError(forKey: key, in: self, debugDescription: "Managed object's property \(key.stringValue) could not be found.")
         }
 
         func decode<T: Decodable>(_ type: T.Type, forKey key: Key) throws -> T? {
-            let value = attribute.isOptional ? try self.decodeIfPresent(type, forKey: key) : try self.decode(type, forKey: key)
+            let value = attribute.isOptional ? try decodeIfPresent(type, forKey: key) : try self.decode(type, forKey: key)
             return value
         }
 
@@ -68,7 +69,8 @@ extension KeyedDecodingContainer {
             value = anyNSCodable?.value
 
         case .transformableAttributeType:
-            guard let data = try decode(Data.self, forKey: key) else {
+            guard let data = try decode(Data.self, forKey: key)
+            else {
                 value = nil
                 break
             }
@@ -91,39 +93,40 @@ extension KeyedDecodingContainer {
 
 extension KeyedEncodingContainer {
     mutating func encodeManagedValue(_ managedValue: Any?, forKey key: Key, entity: NSEntityDescription) throws {
-        let context = EncodingError.Context(codingPath: self.codingPath + [key], debugDescription: "Managed object's property \(key.stringValue) could not be encoded.")
+        let context = EncodingError.Context(codingPath: codingPath + [key], debugDescription: "Managed object's property \(key.stringValue) could not be encoded.")
 
-        guard let attribute = entity.attributesByName[key.stringValue] else {
+        guard let attribute = entity.attributesByName[key.stringValue]
+        else {
             throw EncodingError.invalidValue(managedValue as Any, context)
         }
 
         if let value = managedValue {
             switch (attribute.attributeType, value) {
-            case (.integer16AttributeType, let value as Int16): try self.encode(value, forKey: key)
-            case (.integer32AttributeType, let value as Int32): try self.encode(value, forKey: key)
-            case (.integer64AttributeType, let value as Int64): try self.encode(value, forKey: key)
-            case (.decimalAttributeType, let value as Decimal): try self.encode(value, forKey: key)
-            case (.doubleAttributeType, let value as Double): try self.encode(value, forKey: key)
-            case (.floatAttributeType, let value as Float): try self.encode(value, forKey: key)
-            case (.stringAttributeType, let value as String): try self.encode(value, forKey: key)
-            case (.booleanAttributeType, let value as Bool): try self.encode(value, forKey: key)
-            case (.dateAttributeType, let value as Date): try self.encode(value, forKey: key)
-            case (.binaryDataAttributeType, let value as Data): try self.encode(value, forKey: key)
-            case (.UUIDAttributeType, let value as UUID): try self.encode(value, forKey: key)
-            case (.URIAttributeType, let value as URL): try self.encode(value, forKey: key)
+            case let (.integer16AttributeType, value as Int16): try encode(value, forKey: key)
+            case let (.integer32AttributeType, value as Int32): try encode(value, forKey: key)
+            case let (.integer64AttributeType, value as Int64): try encode(value, forKey: key)
+            case let (.decimalAttributeType, value as Decimal): try encode(value, forKey: key)
+            case let (.doubleAttributeType, value as Double): try encode(value, forKey: key)
+            case let (.floatAttributeType, value as Float): try encode(value, forKey: key)
+            case let (.stringAttributeType, value as String): try encode(value, forKey: key)
+            case let (.booleanAttributeType, value as Bool): try encode(value, forKey: key)
+            case let (.dateAttributeType, value as Date): try encode(value, forKey: key)
+            case let (.binaryDataAttributeType, value as Data): try encode(value, forKey: key)
+            case let (.UUIDAttributeType, value as UUID): try encode(value, forKey: key)
+            case let (.URIAttributeType, value as URL): try encode(value, forKey: key)
 
-            case (.transformableAttributeType, let value as NSCoding):
+            case let (.transformableAttributeType, value as NSCoding):
                 let anyNSCodable = AnyNSCodable(value: value)
-                try self.encode(anyNSCodable, forKey: key)
+                try encode(anyNSCodable, forKey: key)
 
-            case (.transformableAttributeType, let value):
+            case let (.transformableAttributeType, value):
                 guard
                     let transformerName = attribute.valueTransformerName,
                     let transformer = ValueTransformer(forName: NSValueTransformerName(transformerName)),
                     let data = transformer.transformedValue(value) as? Data
                 else { throw EncodingError.invalidValue(managedValue as Any, context) }
 
-                try self.encode(data, forKey: key)
+                try encode(data, forKey: key)
 
             case (.integer16AttributeType, _): throw EncodingError.invalidValue(managedValue as Any, context)
             case (.integer32AttributeType, _): throw EncodingError.invalidValue(managedValue as Any, context)
@@ -143,7 +146,7 @@ extension KeyedEncodingContainer {
             @unknown default: fatalError("KeyedEncodingContainer.encodeManagedValue() encountered unknown attribute type.")
             }
         } else {
-            try self.encodeNil(forKey: key)
+            try encodeNil(forKey: key)
         }
     }
 }

@@ -6,8 +6,8 @@
 //  Copyright © 2018 Riley Testut. All rights reserved.
 //
 
-import Foundation
 import CoreData
+import Foundation
 
 class PrepareUploadingRecordsOperation: Operation<[AnyRecord], Error> {
     let records: [AnyRecord]
@@ -15,12 +15,12 @@ class PrepareUploadingRecordsOperation: Operation<[AnyRecord], Error> {
     private let managedObjectContext: NSManagedObjectContext
 
     override var isAsynchronous: Bool {
-        return true
+        true
     }
 
     init(records: [AnyRecord], coordinator: SyncCoordinator, context: NSManagedObjectContext) {
         self.records = records
-        self.managedObjectContext = context
+        managedObjectContext = context
 
         super.init(coordinator: coordinator)
     }
@@ -28,7 +28,7 @@ class PrepareUploadingRecordsOperation: Operation<[AnyRecord], Error> {
     override func main() {
         super.main()
 
-        self.managedObjectContext.perform {
+        managedObjectContext.perform {
             // Lock records that have relationships which have not yet been uploaded.
             do {
                 let recordIDs = try Record.remoteRelationshipRecordIDs(for: self.records, in: self.managedObjectContext)

@@ -8,16 +8,16 @@
 
 import CoreData
 
-extension NSManagedObjectModel {
-    public enum Configuration: String {
+public extension NSManagedObjectModel {
+    enum Configuration: String {
         case harmony = "Harmony"
         case external = "External"
     }
 }
 
-extension NSPersistentStore {
-    public var configuration: NSManagedObjectModel.Configuration? {
-        let configuration = NSManagedObjectModel.Configuration(rawValue: self.configurationName)
+public extension NSPersistentStore {
+    var configuration: NSManagedObjectModel.Configuration? {
+        let configuration = NSManagedObjectModel.Configuration(rawValue: configurationName)
         return configuration
     }
 }

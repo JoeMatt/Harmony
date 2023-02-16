@@ -6,8 +6,8 @@
 //  Copyright © 2018 Riley Testut. All rights reserved.
 //
 
-import Foundation
 import CoreData
+import Foundation
 @_implementationOnly import os.log
 
 class BatchRecordOperation<ResultType, OperationType: RecordOperation<ResultType>>: Operation<[Record<NSManagedObject>: Result<ResultType, RecordError>], Error> {
@@ -20,13 +20,13 @@ class BatchRecordOperation<ResultType, OperationType: RecordOperation<ResultType
     private(set) var recordResults = [AnyRecord: Result<ResultType, RecordError>]()
 
     override var isAsynchronous: Bool {
-        return true
+        true
     }
 
     override init(coordinator: SyncCoordinator) {
         super.init(coordinator: coordinator)
 
-        self.operationQueue.maxConcurrentOperationCount = 5
+        operationQueue.maxConcurrentOperationCount = 5
     }
 
     override func main() {
@@ -38,14 +38,14 @@ class BatchRecordOperation<ResultType, OperationType: RecordOperation<ResultType
 
         let dispatchGroup = DispatchGroup()
 
-        self.recordController.performBackgroundTask { (fetchContext) in
+        recordController.performBackgroundTask { fetchContext in
             let saveContext = self.recordController.newBackgroundContext()
 
             do {
                 let records = try fetchContext.fetch(fetchRequest).map(Record.init)
                 records.forEach { self.recordResults[$0] = .failure(RecordError.other($0, GeneralError.unknown)) }
 
-                if records.count > 0 {
+                if !records.isEmpty {
                     // We'll increment totalUnitCount as we add operations.
                     self.progress.totalUnitCount = 0
                 }
@@ -53,22 +53,22 @@ class BatchRecordOperation<ResultType, OperationType: RecordOperation<ResultType
                 var remainingRecordsCount = records.count
                 let remainingRecordsOutputQueue = DispatchQueue(label: "com.rileytestut.BatchRecordOperation.remainingRecordsOutputQueue")
 
-                self.process(records, in: fetchContext) { (result) in
+                self.process(records, in: fetchContext) { result in
                     do {
                         let records = try result.get()
 
-                        let operations = records.compactMap { (record) -> OperationType? in
+                        let operations = records.compactMap { record -> OperationType? in
                             do {
                                 let operation = try OperationType(record: record, coordinator: self.coordinator, context: saveContext)
                                 operation.isBatchOperation = true
-                                operation.resultHandler = { (result) in
+                                operation.resultHandler = { result in
                                     self.recordResults[record] = result
                                     dispatchGroup.leave()
 
                                     if UserDefaults.standard.isDebugModeEnabled {
                                         remainingRecordsOutputQueue.async {
                                             remainingRecordsCount = remainingRecordsCount - 1
-											os_log("Remaining %@ operations: %@", type: .info, "\(type(of: self))", remainingRecordsCount)
+                                            os_log("Remaining %@ operations: %@", type: .info, "\(type(of: self))", remainingRecordsCount)
                                         }
                                     }
                                 }
@@ -86,7 +86,7 @@ class BatchRecordOperation<ResultType, OperationType: RecordOperation<ResultType
                             return nil
                         }
 
-                        if records.count > 0 {
+                        if !records.isEmpty {
                             self.syncProgress.addChild(self.progress, withPendingUnitCount: self.progress.totalUnitCount)
                             self.syncProgress.activeProgress = self.progress
                         } else {
@@ -97,7 +97,7 @@ class BatchRecordOperation<ResultType, OperationType: RecordOperation<ResultType
 
                         dispatchGroup.notify(queue: .global()) {
                             saveContext.perform {
-                                self.process(self.recordResults, in: saveContext) { (result) in
+                                self.process(self.recordResults, in: saveContext) { result in
                                     saveContext.perform {
                                         do {
                                             self.recordResults = try result.get()
@@ -141,22 +141,22 @@ class BatchRecordOperation<ResultType, OperationType: RecordOperation<ResultType
         }
     }
 
-    func process(_ records: [Record<NSManagedObject>], in context: NSManagedObjectContext, completionHandler: @escaping (Result<[Record<NSManagedObject>], Error>) -> Void) {
+    func process(_ records: [Record<NSManagedObject>], in _: NSManagedObjectContext, completionHandler: @escaping (Result<[Record<NSManagedObject>], Error>) -> Void) {
         completionHandler(.success(records))
     }
 
     func process(_ results: [Record<NSManagedObject>: Result<ResultType, RecordError>],
-                 in context: NSManagedObjectContext,
+                 in _: NSManagedObjectContext,
                  completionHandler: @escaping (Result<[Record<NSManagedObject>: Result<ResultType, RecordError>], Error>) -> Void) {
         completionHandler(.success(results))
     }
 
-    func process(_ result: Result<[Record<NSManagedObject>: Result<ResultType, RecordError>], Error>, in context: NSManagedObjectContext, completionHandler: @escaping () -> Void) {
+    func process(_: Result<[Record<NSManagedObject>: Result<ResultType, RecordError>], Error>, in _: NSManagedObjectContext, completionHandler: @escaping () -> Void) {
         completionHandler()
     }
 
     override func finish() {
-        self.recordController.processPendingUpdates()
+        recordController.processPendingUpdates()
 
         super.finish()
     }
@@ -164,8 +164,8 @@ class BatchRecordOperation<ResultType, OperationType: RecordOperation<ResultType
 
 private extension BatchRecordOperation {
     func propagateFailure(error: Error) {
-        for (record, _) in self.recordResults {
-            self.recordResults[record] = .failure(RecordError(record, error))
+        for (record, _) in recordResults {
+            recordResults[record] = .failure(RecordError(record, error))
         }
     }
 }

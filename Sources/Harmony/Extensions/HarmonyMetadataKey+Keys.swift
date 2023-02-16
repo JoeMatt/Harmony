@@ -27,11 +27,12 @@ extension HarmonyMetadataKey {
     static let localizedName = HarmonyMetadataKey("harmony_localizedName")
 
     public static var allHarmonyKeys: Set<HarmonyMetadataKey> {
-        return [.recordedObjectType, .recordedObjectIdentifier, .relationshipIdentifier,
-                .isLocked, .previousVersionIdentifier, .previousVersionDate,
-                .sha1Hash, .author, .localizedName]
+        [.recordedObjectType, .recordedObjectIdentifier, .relationshipIdentifier,
+         .isLocked, .previousVersionIdentifier, .previousVersionDate,
+         .sha1Hash, .author, .localizedName]
     }
 }
+
 //
 // @objc
 // public enum HarmonyMetadataKey: Int, RawRepresentable, CaseIterable {

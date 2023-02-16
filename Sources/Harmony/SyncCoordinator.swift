@@ -6,10 +6,10 @@
 //  Copyright © 2017 Riley Testut. All rights reserved.
 //
 
-import Foundation
 import CoreData
-import UIKit
+import Foundation
 @_implementationOnly import os.log
+import UIKit
 
 public extension SyncCoordinator {
     static let didStartSyncingNotification = Notification.Name("syncCoordinatorDidStartSyncingNotification")
@@ -18,8 +18,8 @@ public extension SyncCoordinator {
     static let syncResultKey = "syncResult"
 }
 
-extension SyncCoordinator {
-    public enum ConflictResolution {
+public extension SyncCoordinator {
+    enum ConflictResolution {
         case local
         case remote(Version)
     }
@@ -28,13 +28,13 @@ extension SyncCoordinator {
 public typealias SyncResult = Result<[AnyRecord: Result<Void, RecordError>], SyncError>
 
 public final class SyncCoordinator {
-	public let service: any Service
+    public let service: any Service
     public let persistentContainer: NSPersistentContainer
 
     public let recordController: RecordController
 
     public var account: Account? {
-        return self.managedAccount?.managedObjectContext?.performAndWait {
+        managedAccount?.managedObjectContext?.performAndWait {
             guard let managedAccount = self.managedAccount else { return nil }
 
             let account = Account(account: managedAccount)
@@ -45,69 +45,71 @@ public final class SyncCoordinator {
     private var managedAccount: ManagedAccount? {
         guard _managedAccount == nil else { return _managedAccount }
 
-        let context = self.recordController.newBackgroundContext()
+        let context = recordController.newBackgroundContext()
         _managedAccount = context.performAndWait {
             do {
                 let accounts = try context.fetch(ManagedAccount.currentAccountFetchRequest())
                 return accounts.first
             } catch {
-				os_log("Failed to fetch managed account. %@", type: .error, error.localizedDescription)
+                os_log("Failed to fetch managed account. %@", type: .error, error.localizedDescription)
                 return nil
             }
         }
 
         return _managedAccount
     }
+
     private var _managedAccount: ManagedAccount? {
         didSet {
-            self._managedAccountContext = self._managedAccount?.managedObjectContext
+            _managedAccountContext = _managedAccount?.managedObjectContext
         }
     }
+
     private var _managedAccountContext: NSManagedObjectContext?
 
     public private(set) var isAuthenticated = false
     public private(set) var isSyncing = false
 
     public var isStarted: Bool {
-        return self.recordController.isStarted
+        recordController.isStarted
     }
 
     private let operationQueue: OperationQueue
     private let syncOperationQueue: OperationQueue
 
-	public init(service: any Service, persistentContainer: NSPersistentContainer) {
+    public init(service: any Service, persistentContainer: NSPersistentContainer) {
         self.service = service
         self.persistentContainer = persistentContainer
-        self.recordController = RecordController(persistentContainer: persistentContainer)
+        recordController = RecordController(persistentContainer: persistentContainer)
 
-        self.operationQueue = OperationQueue()
-        self.operationQueue.name = "com.rileytestut.Harmony.SyncCoordinator.operationQueue"
-        self.operationQueue.qualityOfService = .utility
+        operationQueue = OperationQueue()
+        operationQueue.name = "com.rileytestut.Harmony.SyncCoordinator.operationQueue"
+        operationQueue.qualityOfService = .utility
 
-        self.syncOperationQueue = OperationQueue()
-        self.syncOperationQueue.name = "com.rileytestut.Harmony.SyncCoordinator.syncOperationQueue"
-        self.syncOperationQueue.qualityOfService = .utility
-        self.syncOperationQueue.maxConcurrentOperationCount = 1
+        syncOperationQueue = OperationQueue()
+        syncOperationQueue.name = "com.rileytestut.Harmony.SyncCoordinator.syncOperationQueue"
+        syncOperationQueue.qualityOfService = .utility
+        syncOperationQueue.maxConcurrentOperationCount = 1
     }
 
     deinit {
         do {
             try self.stop()
         } catch {
-			os_log("Failed to stop SyncCoordinator. %@", type: .error, error.localizedDescription)
+            os_log("Failed to stop SyncCoordinator. %@", type: .error, error.localizedDescription)
         }
     }
 }
 
 public extension SyncCoordinator {
     func start(completionHandler: @escaping (Result<Account?, Error>) -> Void) {
-        guard !self.isStarted else { return completionHandler(.success(self.account)) }
+        guard !isStarted else { return completionHandler(.success(account)) }
 
-        self.recordController.start { (result) in
+        recordController.start { result in
             do {
                 try result.get()
 
-                self.authenticate() { (result) in
+                self.authenticate { result in
                     do {
                         let account = try result.get()
                         completionHandler(.success(account))
@@ -128,9 +130,9 @@ public extension SyncCoordinator {
     }
 
     func stop() throws {
-        guard self.isStarted else { return }
+        guard isStarted else { return }
 
-        try self.recordController.stop()
+        try recordController.stop()
 
         // Intentionally do not deauthorize, as that also resets the database.
         // No harm in allowing user to remain authorized even if not syncing.
@@ -138,7 +140,7 @@ public extension SyncCoordinator {
     }
 
     @discardableResult func sync() -> Progress? {
-        guard let account = self.managedAccount, let context = account.managedObjectContext else { return nil }
+        guard let account = managedAccount, let context = account.managedObjectContext else { return nil }
 
         return context.performAndWait {
             // If there is already a sync operation waiting to execute, no use adding another one.
@@ -149,7 +151,7 @@ public extension SyncCoordinator {
             self.isSyncing = true
 
             let syncRecordsOperation = SyncRecordsOperation(changeToken: account.changeToken, coordinator: self)
-            syncRecordsOperation.resultHandler = { [weak syncRecordsOperation] (result) in
+            syncRecordsOperation.resultHandler = { [weak syncRecordsOperation] result in
                 if let changeToken = syncRecordsOperation?.updatedChangeToken {
                     let context = self.recordController.newBackgroundContext()
                     context.performAndWait {
@@ -159,7 +161,7 @@ public extension SyncCoordinator {
                         do {
                             try context.save()
                         } catch {
-							os_log("Failed to save change token. %@", type: .error, error.localizedDescription)
+                            os_log("Failed to save change token. %@", type: .error, error.localizedDescription)
                         }
                     }
                 }
@@ -179,31 +181,32 @@ public extension SyncCoordinator {
 
 public extension SyncCoordinator {
     func authenticate(presentingViewController: UIViewController? = nil, completionHandler: @escaping (Result<Account, AuthenticationError>) -> Void) {
-        guard self.isStarted else {
-            self.start { (result) in
+        guard isStarted
+        else {
+            start { result in
                 switch result {
                 case .success: self.authenticate(presentingViewController: presentingViewController, completionHandler: completionHandler)
-                case .failure(let error): completionHandler(.failure(AuthenticationError(error)))
+                case let .failure(error): completionHandler(.failure(AuthenticationError(error)))
                 }
             }
 
             return
         }
 
-        let operation = ServiceOperation<Account, AuthenticationError>(coordinator: self) { (completionHandler) -> Progress? in
-            DispatchQueue.main.async {
-                if let presentingViewController = presentingViewController {
-                    self.service.authenticate(withPresentingViewController: presentingViewController, completionHandler: completionHandler)
-                } else {
-                    self.service.authenticateInBackground(completionHandler: completionHandler)
+        let operation = ServiceOperation<Account, AuthenticationError>(coordinator: self) { completionHandler -> Progress? in
+                DispatchQueue.main.async {
+                    if let presentingViewController = presentingViewController {
+                        self.service.authenticate(withPresentingViewController: presentingViewController, completionHandler: completionHandler)
+                    } else {
+                        self.service.authenticateInBackground(completionHandler: completionHandler)
+                    }
                 }
+                return nil
             }
-            return nil
-        }
-        operation.resultHandler = { (result) in
+        operation.resultHandler = { result in
             let result = result.mapError { AuthenticationError($0) }
             switch result {
-            case .success(let account):
+            case let .success(account):
                 let context = self.recordController.newBackgroundContext()
                 context.performAndWait {
                     let account = ManagedAccount(account: account, service: self.service, context: context)
@@ -213,7 +216,7 @@ public extension SyncCoordinator {
 
                         self.isAuthenticated = true
                     } catch {
-						os_log("Failed to save account. %@ %@", type: .error, account, error.localizedDescription)
+                        os_log("Failed to save account. %@ %@", type: .error, account, error.localizedDescription)
                     }
                 }
 
@@ -234,12 +237,12 @@ public extension SyncCoordinator {
         let isAuthenticated = self.isAuthenticated
         self.isAuthenticated = false
 
-        let operation = ServiceOperation<Void, DeauthenticationError>(coordinator: self) { (completionHandler) -> Progress? in
-            self.service.deauthenticate(completionHandler: completionHandler)
-            return nil
-        }
+        let operation = ServiceOperation<Void, DeauthenticationError>(coordinator: self) { completionHandler -> Progress? in
+                self.service.deauthenticate(completionHandler: completionHandler)
+                return nil
+            }
         operation.requiresAuthentication = false
-        operation.resultHandler = { (result) in
+        operation.resultHandler = { result in
             do {
                 try result.get()
 
@@ -256,24 +259,24 @@ public extension SyncCoordinator {
             }
         }
 
-        self.syncOperationQueue.cancelAllOperations()
-        self.syncOperationQueue.addOperation(operation)
+        syncOperationQueue.cancelAllOperations()
+        syncOperationQueue.addOperation(operation)
     }
 }
 
 public extension SyncCoordinator {
     @discardableResult func fetchVersions<T: NSManagedObject>(for record: Record<T>, completionHandler: @escaping (Result<[Version], RecordError>) -> Void) -> Progress {
-        let operation = ServiceOperation(coordinator: self) { (completionHandler) -> Progress? in
-            return self.service.fetchVersions(for: AnyRecord(record), completionHandler: completionHandler)
+        let operation = ServiceOperation(coordinator: self) { completionHandler -> Progress? in
+            self.service.fetchVersions(for: AnyRecord(record), completionHandler: completionHandler)
         }
-        operation.resultHandler = { (result) in
+        operation.resultHandler = { result in
             switch result {
-            case .success(let versions): completionHandler(.success(versions))
-            case .failure(let error): completionHandler(.failure(RecordError(Record(record), error)))
+            case let .success(versions): completionHandler(.success(versions))
+            case let .failure(error): completionHandler(.failure(RecordError(Record(record), error)))
             }
         }
 
-        self.operationQueue.addOperation(operation)
+        operationQueue.addOperation(operation)
 
         return operation.progress
     }
@@ -281,16 +284,16 @@ public extension SyncCoordinator {
     @discardableResult func upload<T: NSManagedObject>(_ record: Record<T>, completionHandler: @escaping (Result<Record<T>, RecordError>) -> Void) -> Progress {
         let progress = Progress.discreteProgress(totalUnitCount: 1)
 
-        let context = self.recordController.newBackgroundContext()
+        let context = recordController.newBackgroundContext()
 
         do {
             let operation = try UploadRecordOperation(record: record, coordinator: self, context: context)
-            operation.resultHandler = { (result) in
+            operation.resultHandler = { result in
                 do {
                     _ = try result.get()
 
                     let context = self.recordController.newBackgroundContext()
-                    record.perform(in: context) { (managedRecord) in
+                    record.perform(in: context) { managedRecord in
                         let record = Record(managedRecord) as Record<T>
                         completionHandler(.success(record))
                     }
@@ -301,7 +304,7 @@ public extension SyncCoordinator {
 
             progress.addChild(operation.progress, withPendingUnitCount: 1)
 
-            self.operationQueue.addOperation(operation)
+            operationQueue.addOperation(operation)
         } catch {
             completionHandler(.failure(RecordError(Record(record), error)))
         }
@@ -312,18 +315,17 @@ public extension SyncCoordinator {
     @discardableResult func restore<T: NSManagedObject>(_ record: Record<T>, to version: Version, completionHandler: @escaping (Result<Record<T>, RecordError>) -> Void) -> Progress {
         let progress = Progress.discreteProgress(totalUnitCount: 1)
 
-        let context = self.recordController.newBackgroundContext()
+        let context = recordController.newBackgroundContext()
 
         do {
             let operation = try DownloadRecordOperation(record: record, coordinator: self, context: context)
             operation.version = version
-            operation.resultHandler = { (result) in
+            operation.resultHandler = { result in
                 do {
                     _ = try result.get()
 
                     let context = self.recordController.newBackgroundContext()
-                    try record.perform(in: context) { (managedRecord) in
-
+                    try record.perform(in: context) { managedRecord in
                         // Mark as updated so we can upload restored version on next sync.
                         managedRecord.localRecord?.status = .updated
 
@@ -344,7 +346,7 @@ public extension SyncCoordinator {
 
             progress.addChild(operation.progress, withPendingUnitCount: 1)
 
-            self.operationQueue.addOperation(operation)
+            operationQueue.addOperation(operation)
         } catch {
             completionHandler(.failure(RecordError(Record(record), error)))
         }
@@ -355,7 +357,7 @@ public extension SyncCoordinator {
     @discardableResult func resolveConflictedRecord<T: NSManagedObject>(_ record: Record<T>, resolution: ConflictResolution, completionHandler: @escaping (Result<Record<T>, RecordError>) -> Void) -> Progress {
         let progress: Progress
 
-        record.perform { (managedRecord) in
+        record.perform { managedRecord in
             // Mark as not conflicted to prevent operations from throwing "record conflicted" errors.
             managedRecord.isConflicted = false
         }
@@ -364,7 +366,7 @@ public extension SyncCoordinator {
             do {
                 let record = try result.get()
 
-                try record.perform { (managedRecord) in
+                try record.perform { managedRecord in
                     managedRecord.isConflicted = false
 
                     try managedRecord.managedObjectContext?.save()
@@ -373,7 +375,7 @@ public extension SyncCoordinator {
                     completionHandler(.success(resolvedRecord))
                 }
             } catch {
-                record.perform { (managedRecord) in
+                record.perform { managedRecord in
                     managedRecord.isConflicted = true
                 }
 
@@ -383,12 +385,12 @@ public extension SyncCoordinator {
 
         switch resolution {
         case .local:
-            progress = self.upload(record) { (result) in
+            progress = upload(record) { result in
                 finish(result)
             }
 
-        case .remote(let version):
-            progress = self.restore(record, to: version) { (result) in
+        case let .remote(version):
+            progress = restore(record, to: version) { result in
                 finish(result)
             }
         }

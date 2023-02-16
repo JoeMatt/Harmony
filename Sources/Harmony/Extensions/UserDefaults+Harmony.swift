@@ -11,6 +11,6 @@ import Roxas
 
 extension UserDefaults {
     var isDebugModeEnabled: Bool {
-        return UserDefaults.standard.bool(forKey: "com.rileytestut.Harmony.Debug")
+        UserDefaults.standard.bool(forKey: "com.rileytestut.Harmony.Debug")
     }
 }

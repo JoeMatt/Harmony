@@ -6,8 +6,8 @@
 //  Copyright © 2018 Riley Testut. All rights reserved.
 //
 
-import Foundation
 import CoreData
+import Foundation
 @_implementationOnly import os.log
 
 class FinishDownloadingRecordsOperation: Operation<[AnyRecord: Result<LocalRecord, RecordError>], Error> {
@@ -16,12 +16,12 @@ class FinishDownloadingRecordsOperation: Operation<[AnyRecord: Result<LocalRecor
     private let managedObjectContext: NSManagedObjectContext
 
     override var isAsynchronous: Bool {
-        return true
+        true
     }
 
     init(results: [AnyRecord: Result<LocalRecord, RecordError>], coordinator: SyncCoordinator, context: NSManagedObjectContext) {
         self.results = results
-        self.managedObjectContext = context
+        managedObjectContext = context
 
         super.init(coordinator: coordinator)
     }
@@ -29,10 +29,10 @@ class FinishDownloadingRecordsOperation: Operation<[AnyRecord: Result<LocalRecor
     override func main() {
         super.main()
 
-        self.managedObjectContext.perform {
+        managedObjectContext.perform {
             var results = self.results
 
-            let recordIDs = results.values.reduce(into: Set<RecordID>()) { (recordIDs, result) in
+            let recordIDs = results.values.reduce(into: Set<RecordID>()) { recordIDs, result in
                 guard let localRecord = try? result.get(), let relationships = localRecord.remoteRelationships else { return }
                 recordIDs.formUnion(relationships.values)
             }
@@ -44,14 +44,14 @@ class FinishDownloadingRecordsOperation: Operation<[AnyRecord: Result<LocalRecor
                 do {
                     let localRecords = try temporaryContext.fetchRecords(for: recordIDs) as [LocalRecord]
 
-                    let keyValuePairs = localRecords.lazy.compactMap { (localRecord) -> (RecordID, Syncable)? in
-                        guard let recordedObject = localRecord.recordedObject else { return nil }
-                        return (localRecord.recordID, recordedObject)
-                    }
+                    let keyValuePairs = localRecords.lazy.compactMap { localRecord -> (RecordID, Syncable)? in
+                            guard let recordedObject = localRecord.recordedObject else { return nil }
+                            return (localRecord.recordID, recordedObject)
+                        }
 
                     // Prefer temporary objects to persisted ones for establishing relationships.
                     // This prevents the persisted objects from registering with context and potentially causing conflicts.
-                    let relationshipObjects = Dictionary(keyValuePairs, uniquingKeysWith: { return $0.objectID.isTemporaryID ? $0 : $1 })
+                    let relationshipObjects = Dictionary(keyValuePairs, uniquingKeysWith: { $0.objectID.isTemporaryID ? $0 : $1 })
 
                     self.managedObjectContext.perform {
                         // Switch back to context so we can modify objects.
@@ -135,7 +135,7 @@ private extension FinishDownloadingRecordsOperation {
 
         for (key, recordID) in relationships {
             if let relationshipObject = relationshipObjects[recordID] {
-                let relationshipObject = relationshipObject.in(self.managedObjectContext)
+                let relationshipObject = relationshipObject.in(managedObjectContext)
                 recordedObject.setValue(relationshipObject, forKey: key)
             } else {
                 missingRelationshipKeys.insert(key)

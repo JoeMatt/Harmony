@@ -6,8 +6,8 @@
 //  Copyright © 2018 Riley Testut. All rights reserved.
 //
 
-import Foundation
 import CoreData
+import Foundation
 
 class RecordOperation<ResultType>: Operation<ResultType, RecordError> {
     let record: AnyRecord
@@ -16,7 +16,7 @@ class RecordOperation<ResultType>: Operation<ResultType, RecordError> {
     var isBatchOperation = false
 
     override var isAsynchronous: Bool {
-        return true
+        true
     }
 
     required init<T: NSManagedObject>(record: Record<T>, coordinator: SyncCoordinator, context: NSManagedObjectContext) throws {
@@ -25,22 +25,22 @@ class RecordOperation<ResultType>: Operation<ResultType, RecordError> {
 
         self.record = record
 
-        self.managedObjectContext = context
+        managedObjectContext = context
 
         super.init(coordinator: coordinator)
 
-        self.progress.totalUnitCount = 1
-        self.operationQueue.maxConcurrentOperationCount = 2
+        progress.totalUnitCount = 1
+        operationQueue.maxConcurrentOperationCount = 2
     }
 
     override func start() {
-        self.record.perform { _ in
+        record.perform { _ in
             super.start()
         }
     }
 
     override func finish() {
-        self.managedObjectContext.performAndWait {
+        managedObjectContext.performAndWait {
             if self.isCancelled {
                 self.result = .failure(RecordError(self.record, GeneralError.cancelled))
             }

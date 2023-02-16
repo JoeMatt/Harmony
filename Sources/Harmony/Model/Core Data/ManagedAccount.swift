@@ -6,8 +6,8 @@
 //  Copyright © 2019 Riley Testut. All rights reserved.
 //
 
-import Foundation
 import CoreData
+import Foundation
 
 @objc(ManagedAccount)
 class ManagedAccount: NSManagedObject {
@@ -19,22 +19,22 @@ class ManagedAccount: NSManagedObject {
 
     @NSManaged var changeToken: Data?
 
-    private override init(entity: NSEntityDescription, insertInto context: NSManagedObjectContext?) {
+    override private init(entity: NSEntityDescription, insertInto context: NSManagedObjectContext?) {
         super.init(entity: entity, insertInto: context)
     }
 
-	init(account: Account, service: any Service, context: NSManagedObjectContext) {
+    init(account: Account, service: any Service, context: NSManagedObjectContext) {
         super.init(entity: ManagedAccount.entity(), insertInto: context)
 
-        self.name = account.name
-        self.emailAddress = account.emailAddress
-        self.serviceIdentifier = service.identifier
+        name = account.name
+        emailAddress = account.emailAddress
+        serviceIdentifier = service.identifier
     }
 }
 
 extension ManagedAccount {
     @nonobjc class func fetchRequest() -> NSFetchRequest<ManagedAccount> {
-        return NSFetchRequest<ManagedAccount>(entityName: "ManagedAccount")
+        NSFetchRequest<ManagedAccount>(entityName: "ManagedAccount")
     }
 
     @nonobjc class func currentAccountFetchRequest() -> NSFetchRequest<ManagedAccount> {

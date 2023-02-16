@@ -6,26 +6,26 @@
 //  Copyright © 2018 Riley Testut. All rights reserved.
 //
 
-import Foundation
 import CoreData
+import Foundation
 @_implementationOnly import os.log
 
 class DeleteRecordsOperation: BatchRecordOperation<Void, DeleteRecordOperation> {
     private var syncableFiles = [AnyRecord: Set<File>]()
 
     override class var predicate: NSPredicate {
-        return ManagedRecord.deleteRecordsPredicate
+        ManagedRecord.deleteRecordsPredicate
     }
 
     override func main() {
-        self.syncProgress.status = .deleting
+        syncProgress.status = .deleting
 
         super.main()
     }
 
-    override func process(_ records: [AnyRecord], in context: NSManagedObjectContext, completionHandler: @escaping (Result<[AnyRecord], Error>) -> Void) {
+    override func process(_ records: [AnyRecord], in _: NSManagedObjectContext, completionHandler: @escaping (Result<[AnyRecord], Error>) -> Void) {
         for record in records {
-            record.perform { (managedRecord) in
+            record.perform { managedRecord in
                 guard let syncableFiles = managedRecord.localRecord?.recordedObject?.syncableFiles else { return }
                 self.syncableFiles[record] = syncableFiles
             }
@@ -34,13 +34,13 @@ class DeleteRecordsOperation: BatchRecordOperation<Void, DeleteRecordOperation> 
         completionHandler(.success(records))
     }
 
-    override func process(_ result: Result<[AnyRecord: Result<Void, RecordError>], Error>, in context: NSManagedObjectContext, completionHandler: @escaping () -> Void) {
-        guard case .success(let results) = result else { return completionHandler() }
+    override func process(_ result: Result<[AnyRecord: Result<Void, RecordError>], Error>, in _: NSManagedObjectContext, completionHandler: @escaping () -> Void) {
+        guard case let .success(results) = result else { return completionHandler() }
 
         for (record, result) in results {
             guard case .success = result else { continue }
 
-            guard let files = self.syncableFiles[record] else { continue }
+            guard let files = syncableFiles[record] else { continue }
 
             for file in files {
                 do {
@@ -48,7 +48,7 @@ class DeleteRecordsOperation: BatchRecordOperation<Void, DeleteRecordOperation> 
                 } catch CocoaError.fileNoSuchFile {
                     // Ignore
                 } catch {
-					os_log("Harmony failed to delete file at URL: %@", type: .error, String(describing: file.fileURL))
+                    os_log("Harmony failed to delete file at URL: %@", type: .error, String(describing: file.fileURL))
                 }
             }
         }

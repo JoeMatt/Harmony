@@ -26,16 +26,16 @@ class ContextCache {
 
 extension NSManagedObjectContext {
     var savingCache: ContextCache? {
-        get { return objc_getAssociatedObject(self, &contextCacheKey) as? ContextCache }
+        get { objc_getAssociatedObject(self, &contextCacheKey) as? ContextCache }
         set { objc_setAssociatedObject(self, &contextCacheKey, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC) }
     }
 }
 
 extension NSManagedObjectContext {
     func performAndWait<T>(_ block: @escaping () -> T) -> T {
-        var result: T! = nil
+        var result: T!
 
-        self.performAndWait {
+        performAndWait {
             result = block()
         }
 
@@ -43,9 +43,9 @@ extension NSManagedObjectContext {
     }
 
     func performAndWait<T>(_ block: @escaping () throws -> T) throws -> T {
-        var result: Result<T, Error>! = nil
+        var result: Result<T, Error>!
 
-        self.performAndWait {
+        performAndWait {
             result = Result { try block() }
         }
 
@@ -72,7 +72,7 @@ extension NSManagedObjectContext {
         // fetchRequest.fetchBatchSize = 100
 
         // Filter out any records that happen to have a matching recordedObjectIdentifier, but not matching recordedObjectType.
-        let records = try self.fetch(fetchRequest).filter { recordIDs.contains($0.recordID) }
+        let records = try fetch(fetchRequest).filter { recordIDs.contains($0.recordID) }
         return records
     }
 }

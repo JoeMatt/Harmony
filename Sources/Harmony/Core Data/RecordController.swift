@@ -6,8 +6,8 @@
 //  Copyright © 2017 Riley Testut. All rights reserved.
 //
 
-import Foundation
 import CoreData
+import Foundation
 @_implementationOnly import os.log
 import Roxas
 
@@ -15,8 +15,8 @@ extension Notification.Name {
     static let recordControllerDidProcessUpdates = Notification.Name("recordControllerDidProcessUpdates")
 }
 
-extension RecordController {
-    public enum Error: Swift.Error {
+public extension RecordController {
+    enum Error: Swift.Error {
         case noEntities
     }
 }
@@ -24,21 +24,21 @@ extension RecordController {
 public final class RecordController: RSTPersistentContainer {
     public private(set) var isSeeded: Bool {
         get {
-            guard let metadata = self.persistentStoreCoordinator.persistentStores.first?.metadata else { return false }
+            guard let metadata = persistentStoreCoordinator.persistentStores.first?.metadata else { return false }
 
             let isSeeded = metadata["harmony_isSeeded"] as? Bool
             return isSeeded ?? false
         }
         set {
-            guard let store = self.persistentStoreCoordinator.persistentStores.first else { return }
+            guard let store = persistentStoreCoordinator.persistentStores.first else { return }
             store.metadata["harmony_isSeeded"] = newValue
 
             // Must save a context for store metadata to update.
-            self.performBackgroundTask { (context) in
+            performBackgroundTask { context in
                 do {
                     try context.save()
                 } catch {
-					os_log("Failed to update store metadata: %@", type: .error, error.localizedDescription)
+                    os_log("Failed to update store metadata: %@", type: .error, error.localizedDescription)
                 }
             }
         }
@@ -61,9 +61,9 @@ public final class RecordController: RSTPersistentContainer {
 
         super.init(name: "Harmony", managedObjectModel: persistentContainer.managedObjectModel)
 
-        self.preferredMergePolicy = MergePolicy()
+        preferredMergePolicy = MergePolicy()
 
-        for description in self.persistentStoreDescriptions {
+        for description in persistentStoreDescriptions {
             description.configuration = NSManagedObjectModel.Configuration.harmony.rawValue
         }
 
@@ -71,12 +71,12 @@ public final class RecordController: RSTPersistentContainer {
         for description in externalPersistentStoreDescriptions {
             description.configuration = NSManagedObjectModel.Configuration.external.rawValue
         }
-        self.persistentStoreDescriptions.append(contentsOf: externalPersistentStoreDescriptions)
+        persistentStoreDescriptions.append(contentsOf: externalPersistentStoreDescriptions)
 
-        self.shouldAddStoresAsynchronously = true
+        shouldAddStoresAsynchronously = true
     }
 
-    public override class func defaultDirectoryURL() -> URL {
+    override public class func defaultDirectoryURL() -> URL {
         let harmonyDirectory = FileManager.default.applicationSupportDirectory.appendingPathComponent("com.rileytestut.Harmony", isDirectory: true)
         return harmonyDirectory
     }
@@ -85,27 +85,27 @@ public final class RecordController: RSTPersistentContainer {
         do {
             try self.stop()
         } catch {
-			os_log("Failed to stop RecordController. %@", type: .error, error.localizedDescription )
+            os_log("Failed to stop RecordController. %@", type: .error, error.localizedDescription)
         }
     }
 }
 
 internal extension RecordController {
     func start(completionHandler: @escaping (Result<Void, DatabaseError>) -> Void) {
-        guard !self.isStarted else { return completionHandler(.success) }
+        guard !isStarted else { return completionHandler(.success) }
 
         do {
             try FileManager.default.createDirectory(at: RecordController.defaultDirectoryURL(), withIntermediateDirectories: true, attributes: nil)
         } catch {
-			os_log("%@", type: .error, error.localizedDescription)
+            os_log("%@", type: .error, error.localizedDescription)
         }
 
         var databaseError: Swift.Error?
 
         let dispatchGroup = DispatchGroup()
-        self.persistentStoreDescriptions.forEach { _ in dispatchGroup.enter() }
+        persistentStoreDescriptions.forEach { _ in dispatchGroup.enter() }
 
-        self.loadPersistentStores { (_, error) in
+        loadPersistentStores { _, error in
             if let error = error, databaseError == nil {
                 databaseError = error
             }
@@ -119,8 +119,8 @@ internal extension RecordController {
                     throw error
                 }
 
-                self.processingContext = self.newBackgroundContext()
-                self.isStarted = true
+                processingContext = newBackgroundContext()
+                isStarted = true
 
                 NotificationCenter.default.addObserver(self, selector: #selector(RecordController.managedObjectContextWillSave(_:)), name: .NSManagedObjectContextWillSave, object: nil)
                 NotificationCenter.default.addObserver(self, selector: #selector(RecordController.managedObjectContextObjectsDidChange(_:)), name: .NSManagedObjectContextObjectsDidChange, object: nil)
@@ -132,7 +132,7 @@ internal extension RecordController {
             }
         }
 
-        if self.shouldAddStoresAsynchronously {
+        if shouldAddStoresAsynchronously {
             dispatchGroup.notify(queue: DispatchQueue.global(qos: .userInitiated)) {
                 finish()
             }
@@ -143,18 +143,18 @@ internal extension RecordController {
     }
 
     func stop() throws {
-        guard self.isStarted else { return }
+        guard isStarted else { return }
 
-        try self.persistentStoreCoordinator.persistentStores.forEach(self.persistentStoreCoordinator.remove)
+        try persistentStoreCoordinator.persistentStores.forEach(persistentStoreCoordinator.remove)
 
         NotificationCenter.default.removeObserver(self, name: .NSManagedObjectContextDidSave, object: nil)
 
-        self.processingContext = nil
-        self.isStarted = false
+        processingContext = nil
+        isStarted = false
     }
 
     func reset() throws {
-        try self.stop()
+        try stop()
 
         do {
             try FileManager.default.removeItem(at: RecordController.defaultDirectoryURL())
@@ -162,7 +162,7 @@ internal extension RecordController {
             // Ignore
         }
 
-        self.isSeeded = false
+        isSeeded = false
     }
 }
 
@@ -170,7 +170,8 @@ public extension RecordController {
     @discardableResult func seedFromPersistentContainer(completionHandler: @escaping (Result<Void, Swift.Error>) -> Void) -> Progress {
         let progress = Progress(totalUnitCount: 0)
 
-        guard let entities = self.managedObjectModel.entities(forConfigurationName: NSManagedObjectModel.Configuration.external.rawValue) else {
+        guard let entities = managedObjectModel.entities(forConfigurationName: NSManagedObjectModel.Configuration.external.rawValue)
+        else {
             completionHandler(.failure(Error.noEntities))
             return progress
         }
@@ -178,7 +179,7 @@ public extension RecordController {
         let syncableEntityNames = entities.lazy.filter { NSClassFromString($0.managedObjectClassName) is Syncable.Type }.compactMap { $0.name }
         progress.totalUnitCount = Int64(syncableEntityNames.count)
 
-        self.performBackgroundTask { (context) in
+        performBackgroundTask { context in
             do {
                 for name in syncableEntityNames {
                     let fetchRequest = NSFetchRequest<NSManagedObject>(entityName: name)
@@ -209,7 +210,7 @@ public extension RecordController {
     }
 
     func updateRecord<T: Syncable>(for managedObject: T) {
-        guard let context = self.processingContext else { return }
+        guard let context = processingContext else { return }
 
         context.performAndWait {
             self.updateLocalRecords(for: [managedObject.objectID], status: .updated, in: context)
@@ -221,12 +222,12 @@ public extension RecordController {
     func fetchConflictedRecords() throws -> Set<Record<NSManagedObject>> {
         let predicate = NSPredicate(format: "%K == YES", #keyPath(ManagedRecord.isConflicted))
 
-        let records = try self.fetchRecords(predicate: predicate, type: NSManagedObject.self)
+        let records = try fetchRecords(predicate: predicate, type: NSManagedObject.self)
         return records
     }
 
     func fetchRecords<RecordType: NSManagedObject, U: Collection>(for recordedObjects: U) throws -> Set<Record<RecordType>> where U.Element == RecordType {
-        let predicates = recordedObjects.compactMap { (recordedObject) -> NSPredicate? in
+        let predicates = recordedObjects.compactMap { recordedObject -> NSPredicate? in
             guard let syncableManagedObject = recordedObject as? Syncable, let identifier = syncableManagedObject.syncableIdentifier else { return nil }
 
             let predicate = NSPredicate(format: "%K == %@ AND %K == %@",
@@ -237,12 +238,12 @@ public extension RecordController {
 
         let predicate = NSCompoundPredicate(orPredicateWithSubpredicates: predicates)
 
-        let records = try self.fetchRecords(predicate: predicate, type: RecordType.self)
+        let records = try fetchRecords(predicate: predicate, type: RecordType.self)
         return records
     }
 
-    private func fetchRecords<RecordType: NSManagedObject>(predicate: NSPredicate, type: RecordType.Type) throws -> Set<Record<RecordType>> {
-        let context = self.newBackgroundContext()
+    private func fetchRecords<RecordType: NSManagedObject>(predicate: NSPredicate, type _: RecordType.Type) throws -> Set<Record<RecordType>> {
+        let context = newBackgroundContext()
         context.automaticallyMergesChangesFromParent = false
 
         let result = context.performAndWait { () -> Result<Set<Record<RecordType>>, Swift.Error> in
@@ -269,16 +270,16 @@ public extension RecordController {
 
 extension RecordController {
     func processPendingUpdates() {
-        self.processingDispatchGroup.wait()
+        processingDispatchGroup.wait()
 
         if Thread.isMainThread {
             // Refresh objects (only necessary for testing).
-            self.viewContext.refreshAllObjects()
+            viewContext.refreshAllObjects()
         }
     }
 
     public func printRecords() {
-        let context = self.newBackgroundContext()
+        let context = newBackgroundContext()
         context.performAndWait {
             let fetchRequest = ManagedRecord.fetchRequest() as NSFetchRequest<ManagedRecord>
 
@@ -305,7 +306,7 @@ extension RecordController {
                     string += " RR: nil"
                 }
 
-				os_log("%@", type: .debug, string)
+                os_log("%@", type: .debug, string)
             }
 
             let remoteFilesFetchRequest = RemoteFile.fetchRequest() as! NSFetchRequest<RemoteFile>
@@ -344,7 +345,8 @@ private extension RecordController {
             // Update existing managed records.
             for record in managedRecords {
                 let recordID = RecordID(type: record.recordedObjectType, identifier: record.recordedObjectIdentifier)
-                guard let recordRepresentation = recordRepresentationsByRecordID[recordID] else {
+                guard let recordRepresentation = recordRepresentationsByRecordID[recordID]
+                else {
                     continue
                 }
 
@@ -386,10 +388,10 @@ private extension RecordController {
 
         do {
             // Map all recordedObjectIDs to URI representations suitable for use with provided context.
-            var recordedObjectURIs = Set(recordedObjectIDs.lazy.compactMap { (recordedObjectID) -> URL? in
-                guard let objectID = context.persistentStoreCoordinator?.managedObjectID(forURIRepresentation: recordedObjectID.uriRepresentation()) else { return nil }
-                return objectID.uriRepresentation()
-            })
+            var recordedObjectURIs = Set(recordedObjectIDs.lazy.compactMap { recordedObjectID -> URL? in
+                    guard let objectID = context.persistentStoreCoordinator?.managedObjectID(forURIRepresentation: recordedObjectID.uriRepresentation()) else { return nil }
+                    return objectID.uriRepresentation()
+                })
 
             // Fetch local records for syncable managed objects
             let predicates = recordedObjectURIs.map { NSPredicate(format: "%K == %@", #keyPath(LocalRecord.recordedObjectURI), $0 as NSURL) }
@@ -417,7 +419,7 @@ private extension RecordController {
                 for objectURI in recordedObjectURIs {
                     do {
                         guard
-                            let objectID = self.persistentStoreCoordinator.managedObjectID(forURIRepresentation: objectURI),
+                            let objectID = persistentStoreCoordinator.managedObjectID(forURIRepresentation: objectURI),
                             let syncableManagedObject = try context.existingObject(with: objectID) as? Syncable
                         else { continue }
 
@@ -473,9 +475,9 @@ private extension RecordController {
     }
 
     @objc func managedObjectContextDidSave(_ notification: Notification) {
-        guard let processingContext = self.processingContext else { return }
+        guard let processingContext = processingContext else { return }
 
-        guard self.automaticallyRecordsManagedObjects else { return }
+        guard automaticallyRecordsManagedObjects else { return }
 
         guard
             let managedObjectContext = notification.object as? NSManagedObjectContext,
@@ -492,7 +494,7 @@ private extension RecordController {
         let cache = managedObjectContext.savingCache ?? ContextCache()
         managedObjectContext.savingCache = nil
 
-        if managedObjectContext.persistentStoreCoordinator != self.persistentStoreCoordinator {
+        if managedObjectContext.persistentStoreCoordinator != persistentStoreCoordinator {
             // Filter out non-syncable managed objects.
             insertedObjects = insertedObjects.filter { ($0 as? Syncable)?.isSyncingEnabled == true }
             deletedObjects = deletedObjects.filter { ($0 as? Syncable)?.isSyncingEnabled == true }
@@ -517,10 +519,10 @@ private extension RecordController {
         }
 
         let changes = [NSInsertedObjectsKey: insertedObjects.map { $0.objectID },
-                       NSUpdatedObjectsKey: updatedObjects.map { $0.objectID},
-                       NSDeletedObjectsKey: deletedObjects.map { $0.objectID}]
+                       NSUpdatedObjectsKey: updatedObjects.map { $0.objectID },
+                       NSDeletedObjectsKey: deletedObjects.map { $0.objectID }]
 
-        self.processingDispatchGroup.enter()
+        processingDispatchGroup.enter()
 
         processingContext.perform {
             if managedObjectContext.persistentStoreCoordinator != self.persistentStoreCoordinator {
@@ -536,11 +538,11 @@ private extension RecordController {
         let deletedObjectIDs = changes[NSDeletedObjectsKey] ?? []
 
         if !updatedObjectIDs.isEmpty {
-            self.updateLocalRecords(for: updatedObjectIDs, status: .updated, in: context)
+            updateLocalRecords(for: updatedObjectIDs, status: .updated, in: context)
         }
 
         if !deletedObjectIDs.isEmpty {
-            self.updateLocalRecords(for: deletedObjectIDs, status: .deleted, in: context)
+            updateLocalRecords(for: deletedObjectIDs, status: .deleted, in: context)
         }
 
         NSManagedObjectContext.mergeChanges(fromRemoteContextSave: changes, into: [context])
@@ -552,7 +554,7 @@ private extension RecordController {
 
         NotificationCenter.default.post(name: .recordControllerDidProcessUpdates, object: self)
 
-        self.processingDispatchGroup.leave()
+        processingDispatchGroup.leave()
     }
 
     func processHarmonyChanges(_ changes: [String: [NSManagedObjectID]], in context: NSManagedObjectContext) {
@@ -561,17 +563,17 @@ private extension RecordController {
         let remoteRecordIDs = objectIDs.filter { $0.entity == RemoteRecord.entity() }
 
         if !localRecordIDs.isEmpty {
-            self.updateManagedRecords(for: localRecordIDs, keyPath: \ManagedRecord.localRecord, in: context)
+            updateManagedRecords(for: localRecordIDs, keyPath: \ManagedRecord.localRecord, in: context)
         }
 
         if !remoteRecordIDs.isEmpty {
-            self.updateManagedRecords(for: remoteRecordIDs, keyPath: \ManagedRecord.remoteRecord, in: context)
+            updateManagedRecords(for: remoteRecordIDs, keyPath: \ManagedRecord.remoteRecord, in: context)
         }
 
         DispatchQueue.main.async {
             NSManagedObjectContext.mergeChanges(fromRemoteContextSave: changes, into: [self.persistentContainer.viewContext])
         }
 
-        self.processingDispatchGroup.leave()
+        processingDispatchGroup.leave()
     }
 }

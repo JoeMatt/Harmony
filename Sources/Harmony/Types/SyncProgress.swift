@@ -20,21 +20,21 @@ extension SyncProgress {
 class SyncProgress: Progress {
     var status: Status = .fetchingChanges {
         didSet {
-            self.updateLocalizedAdditionalDescription()
+            updateLocalizedAdditionalDescription()
         }
     }
 
     var activeProgress: Progress? {
         didSet {
-            self.activeProgressObservation?.invalidate()
+            activeProgressObservation?.invalidate()
 
-            if let progress = self.activeProgress {
-                self.activeProgressObservation = progress.observe(\.completedUnitCount) { [weak self] (_, _) in
-                    self?.updateLocalizedAdditionalDescription()
-                }
+            if let progress = activeProgress {
+                activeProgressObservation = progress.observe(\.completedUnitCount) { [weak self] _, _ in
+                        self?.updateLocalizedAdditionalDescription()
+                    }
             }
 
-            self.updateLocalizedAdditionalDescription()
+            updateLocalizedAdditionalDescription()
         }
     }
 
@@ -43,18 +43,18 @@ class SyncProgress: Progress {
     override init(parent parentProgressOrNil: Progress?, userInfo userInfoOrNil: [ProgressUserInfoKey: Any]? = nil) {
         super.init(parent: parentProgressOrNil, userInfo: userInfoOrNil)
 
-        self.localizedDescription = NSLocalizedString("Syncing…", comment: "")
-        self.updateLocalizedAdditionalDescription()
+        localizedDescription = NSLocalizedString("Syncing…", comment: "")
+        updateLocalizedAdditionalDescription()
     }
 
     private func updateLocalizedAdditionalDescription() {
         let localizedAdditionalDescription: String
 
-        if let progress = self.activeProgress {
+        if let progress = activeProgress {
             // Ensures we start at 1, but never go past totalUnitCount.
             let count = min(progress.completedUnitCount + 1, progress.totalUnitCount)
 
-            switch self.status {
+            switch status {
             case .fetchingChanges: localizedAdditionalDescription = ""
             case .uploading: localizedAdditionalDescription = String.localizedStringWithFormat(NSLocalizedString("Uploading %d of %d", comment: ""), count, progress.totalUnitCount)
             case .downloading: localizedAdditionalDescription = String.localizedStringWithFormat(NSLocalizedString("Downloading %d of %d", comment: ""), count, progress.totalUnitCount)

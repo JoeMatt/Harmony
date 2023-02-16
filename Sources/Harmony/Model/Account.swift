@@ -18,7 +18,7 @@ public struct Account {
     }
 
     init(account: ManagedAccount) {
-        self.name = account.name
-        self.emailAddress = account.emailAddress
+        name = account.name
+        emailAddress = account.emailAddress
     }
 }

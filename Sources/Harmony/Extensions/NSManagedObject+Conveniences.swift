@@ -10,7 +10,7 @@ import CoreData
 
 extension NSManagedObject {
     func `in`(_ context: NSManagedObjectContext) -> Self {
-        let managedObject = context.object(with: self.objectID)
+        let managedObject = context.object(with: objectID)
         return unsafeDowncast(managedObject, to: type(of: self))
     }
 }

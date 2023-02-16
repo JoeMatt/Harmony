@@ -6,8 +6,8 @@
 //  Copyright © 2018 Riley Testut. All rights reserved.
 //
 
-import Foundation
 import CoreData
+import Foundation
 
 private enum ConflictAction {
     case upload
@@ -19,8 +19,7 @@ class ConflictRecordOperation: RecordOperation<Void> {
     override func main() {
         super.main()
 
-        self.record.perform(in: self.managedObjectContext) { (managedRecord) in
-
+        record.perform(in: managedObjectContext) { managedRecord in
             let action: ConflictAction
 
             if

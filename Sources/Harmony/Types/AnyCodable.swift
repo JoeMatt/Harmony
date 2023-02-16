@@ -44,8 +44,8 @@ struct AnyCodable: Codable {
     func encode(to encoder: Encoder) throws {
         var container = encoder.singleValueContainer()
 
-        switch self.value {
-        case let number as NSNumber: try self.encode(nsnumber: number, into: &container)
+        switch value {
+        case let number as NSNumber: try encode(nsnumber: number, into: &container)
         case is NSNull: try container.encodeNil()
         case is Void: try container.encodeNil()
         case let bool as Bool: try container.encode(bool)
@@ -68,7 +68,7 @@ struct AnyCodable: Codable {
         case let dictionary as [String: Any?]: try container.encode(dictionary.mapValues { AnyCodable($0) })
         default:
             let context = EncodingError.Context(codingPath: container.codingPath, debugDescription: "AnyCodable value cannot be encoded.")
-            throw EncodingError.invalidValue(self.value, context)
+            throw EncodingError.invalidValue(value, context)
         }
     }
 

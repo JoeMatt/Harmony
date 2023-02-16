@@ -6,14 +6,13 @@
 //  Copyright © 2017 Riley Testut. All rights reserved.
 //
 
+import Roxas
 import XCTest
 @testable import Harmony
-import Roxas
 
 import CoreData
 
-class FileTests: HarmonyTestCase {
-}
+class FileTests: HarmonyTestCase {}
 
 extension FileTests {
     func testInitialization() {

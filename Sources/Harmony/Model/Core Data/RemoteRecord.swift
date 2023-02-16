@@ -27,25 +27,25 @@ public class RemoteRecord: RecordRepresentation {
 
     public var version: Version {
         get {
-            let version = Version(identifier: self.versionIdentifier, date: self.versionDate)
+            let version = Version(identifier: versionIdentifier, date: versionDate)
             return version
         }
         set {
-            self.versionIdentifier = newValue.identifier
-            self.versionDate = newValue.date
+            versionIdentifier = newValue.identifier
+            versionDate = newValue.date
         }
     }
 
     var previousUnlockedVersion: Version? {
         get {
-            guard let identifier = self.previousVersionIdentifier, let date = self.previousVersionDate else { return nil }
+            guard let identifier = previousVersionIdentifier, let date = previousVersionDate else { return nil }
 
             let version = Version(identifier: identifier, date: date)
             return version
         }
         set {
-            self.previousVersionIdentifier = newValue?.identifier
-            self.previousVersionDate = newValue?.date
+            previousVersionIdentifier = newValue?.identifier
+            previousVersionDate = newValue?.date
         }
     }
 
@@ -59,7 +59,7 @@ public class RemoteRecord: RecordRepresentation {
 
         self.status = status
 
-        self.version = Version(identifier: versionIdentifier, date: versionDate)
+        version = Version(identifier: versionIdentifier, date: versionDate)
     }
 
     public convenience init(identifier: String, versionIdentifier: String, versionDate: Date, metadata: [HarmonyMetadataKey: String], status: RecordStatus, context: NSManagedObjectContext) throws {
@@ -73,7 +73,7 @@ public class RemoteRecord: RecordRepresentation {
 
         if let identifier = metadata[.previousVersionIdentifier], let dateString = metadata[.previousVersionDate], let timeInterval = TimeInterval(dateString) {
             let date = Date(timeIntervalSinceReferenceDate: timeInterval)
-            self.previousUnlockedVersion = Version(identifier: identifier, date: date)
+            previousUnlockedVersion = Version(identifier: identifier, date: date)
         }
 
         if let author = metadata[.author] {
@@ -87,26 +87,26 @@ public class RemoteRecord: RecordRepresentation {
         if let sha1Hash = metadata[.sha1Hash] {
             self.sha1Hash = sha1Hash
         } else {
-            self.sha1Hash = ""
+            sha1Hash = ""
         }
 
         let filteredMetadata = metadata.filter { !HarmonyMetadataKey.allHarmonyKeys.contains($0.key) }
         self.metadata = filteredMetadata
     }
 
-    private override init(entity: NSEntityDescription, insertInto context: NSManagedObjectContext?) {
+    override private init(entity: NSEntityDescription, insertInto context: NSManagedObjectContext?) {
         super.init(entity: entity, insertInto: context)
     }
 
-    public override func awakeFromInsert() {
+    override public func awakeFromInsert() {
         super.awakeFromInsert()
 
-        self.metadata = [:]
+        metadata = [:]
     }
 }
 
 extension RemoteRecord {
     @nonobjc class func fetchRequest() -> NSFetchRequest<RemoteRecord> {
-        return NSFetchRequest<RemoteRecord>(entityName: "RemoteRecord")
+        NSFetchRequest<RemoteRecord>(entityName: "RemoteRecord")
     }
 }

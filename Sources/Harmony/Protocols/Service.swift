@@ -6,16 +6,25 @@
 //  Copyright © 2017 Riley Testut. All rights reserved.
 //
 
-import Foundation
 import CoreData
-import UIKit
+import Foundation
+
+#if canImport(UIKit)
+    import UIKit
+#endif
+
+public typealias AuthenticationResult = Result<Account, AuthenticationError>
 
 public protocol Service: Equatable {
     var localizedName: String { get }
     var identifier: String { get }
 
-    func authenticate(withPresentingViewController viewController: UIViewController, completionHandler: @escaping (Result<Account, AuthenticationError>) -> Void)
-    func authenticateInBackground(completionHandler: @escaping (Result<Account, AuthenticationError>) -> Void)
+    #if canImport(UIKit)
+        func authenticate(withPresentingViewController viewController: UIViewController, completionHandler: @escaping (AuthenticationResult) -> Void)
+    #else
+        func authenticate(completionHandler: @escaping (AuthenticationResult) -> Void)
+    #endif
+    func authenticateInBackground(completionHandler: @escaping (AuthenticationResult) -> Void)
 
     func deauthenticate(completionHandler: @escaping (Result<Void, DeauthenticationError>) -> Void)
 
@@ -35,22 +44,21 @@ public protocol Service: Equatable {
     func fetchVersions(for record: AnyRecord, completionHandler: @escaping (Result<[Version], RecordError>) -> Void) -> Progress
 }
 
-
 public extension Equatable where Self: Service {
-	static func ==(lhs: Self, rhs: Self) -> Bool {
-		return lhs.identifier == rhs.identifier
-	}
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.identifier == rhs.identifier
+    }
 
-	static func !=(lhs: Self, rhs: Self) -> Bool {
-		return !(lhs == rhs)
-	}
+    static func != (lhs: Self, rhs: Self) -> Bool {
+        !(lhs == rhs)
+    }
 
-	static func ~=(lhs: Self, rhs: Self) -> Bool {
-		return lhs == rhs
-	}
+    static func ~= (lhs: Self, rhs: Self) -> Bool {
+        lhs == rhs
+    }
 }
 
 @available(iOS 13.0, *)
 public extension Identifiable where Self: Service {
-	var id: String { identifier }
+    var id: String { identifier }
 }

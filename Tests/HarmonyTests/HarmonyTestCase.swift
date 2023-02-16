@@ -37,21 +37,21 @@ class HarmonyTestCase: XCTestCase {
 
         try? FileManager.default.createDirectory(at: FileManager.default.documentsDirectory, withIntermediateDirectories: true, attributes: nil)
 
-        self.performSaveInTearDown = true
+        performSaveInTearDown = true
 
-        self.prepareDatabase()
+        prepareDatabase()
     }
 
     override func tearDown() {
-        if self.performSaveInTearDown {
+        if performSaveInTearDown {
             // Ensure all tests result in saveable NSManagedObject state.
-            XCTAssertNoThrow(try self.recordController.viewContext.save())
+            XCTAssertNoThrow(try recordController.viewContext.save())
         }
 
-        self.recordController.viewContext.automaticallyMergesChangesFromParent = false
+        recordController.viewContext.automaticallyMergesChangesFromParent = false
 
-        self.deletePersistentStores(for: self.persistentContainer.persistentStoreCoordinator)
-        self.deletePersistentStores(for: self.recordController.persistentStoreCoordinator)
+        deletePersistentStores(for: persistentContainer.persistentStoreCoordinator)
+        deletePersistentStores(for: recordController.persistentStoreCoordinator)
 
         super.tearDown()
     }
@@ -74,45 +74,45 @@ class HarmonyTestCase: XCTestCase {
 
 extension HarmonyTestCase {
     func prepareDatabase() {
-        self.preparePersistentContainer()
-        self.prepareRecordController()
+        preparePersistentContainer()
+        prepareRecordController()
     }
 
     func preparePersistentContainer() {
         let managedObjectModel = HarmonyTestCase.managedObjectModel
-        self.persistentContainer = NSPersistentContainer(name: "HarmonyTests", managedObjectModel: managedObjectModel)
-        self.persistentContainer.persistentStoreDescriptions.forEach { $0.shouldAddStoreAsynchronously = false; $0.shouldMigrateStoreAutomatically = false }
+        persistentContainer = NSPersistentContainer(name: "HarmonyTests", managedObjectModel: managedObjectModel)
+        persistentContainer.persistentStoreDescriptions.forEach { $0.shouldAddStoreAsynchronously = false; $0.shouldMigrateStoreAutomatically = false }
 
-        self.persistentContainer.loadPersistentStores { (_, error) in
+        persistentContainer.loadPersistentStores { _, error in
             assert(error == nil)
         }
 
-        NSManagedObjectContext.harmonyTestsFactoryDefault = self.persistentContainer.viewContext
+        NSManagedObjectContext.harmonyTestsFactoryDefault = persistentContainer.viewContext
     }
 
     func prepareRecordController() {
-        self.recordController = RecordController(persistentContainer: self.persistentContainer)
-        self.recordController.shouldAddStoresAsynchronously = false
-        self.recordController.persistentStoreDescriptions.forEach { $0.shouldMigrateStoreAutomatically = false }
-        self.recordController.automaticallyRecordsManagedObjects = false
+        recordController = RecordController(persistentContainer: persistentContainer)
+        recordController.shouldAddStoresAsynchronously = false
+        recordController.persistentStoreDescriptions.forEach { $0.shouldMigrateStoreAutomatically = false }
+        recordController.automaticallyRecordsManagedObjects = false
 
-        self.recordController.start { result in
-			switch result {
-			  case .failure(let error):
-				  XCTFail("Expected to be a success but got a failure with \(error)")
-			case .success(_):
-				break
-//				  XCTAssertEqual(value, 42)
-			  }
+        recordController.start { result in
+            switch result {
+            case let .failure(error):
+                XCTFail("Expected to be a success but got a failure with \(error)")
+            case .success:
+                break
+                //				  XCTAssertEqual(value, 42)
+            }
         }
 
-        NSManagedObjectContext.harmonyFactoryDefault = self.recordController.viewContext
+        NSManagedObjectContext.harmonyFactoryDefault = recordController.viewContext
     }
 }
 
 extension HarmonyTestCase {
     func waitForRecordControllerToProcessUpdates() {
         let expectation = XCTNSNotificationExpectation(name: .recordControllerDidProcessUpdates)
-        self.wait(for: [expectation], timeout: 2.0)
+        wait(for: [expectation], timeout: 2.0)
     }
 }

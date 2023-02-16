@@ -11,15 +11,14 @@ import CoreData
 public extension NSManagedObjectModel {
     class func harmonyModel(byMergingWith managedObjectModels: [NSManagedObjectModel]) -> NSManagedObjectModel? {
         #if SWIFT_PACKAGE
-        let modelURL = Bundle.module.url(forResource: "Harmony", withExtension: "momd")
+            let modelURL = Bundle.module.url(forResource: "Harmony", withExtension: "momd")
         #else
-        let modelURL = Bundle(for: RecordController.self).url(forResource: "Harmony", withExtension: "momd")
+            let modelURL = Bundle(for: RecordController.self).url(forResource: "Harmony", withExtension: "momd")
         #endif
         guard
             let modelURL = modelURL,
             let harmonyModel = NSManagedObjectModel(contentsOf: modelURL)
-        else
-        {
+        else {
             fatalError("Harmony Core Data model cannot be found. Aborting.")
         }
 

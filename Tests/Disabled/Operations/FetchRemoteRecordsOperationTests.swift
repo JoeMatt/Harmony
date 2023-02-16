@@ -6,8 +6,8 @@
 //  Copyright © 2018 Riley Testut. All rights reserved.
 //
 
-import XCTest
 import CoreData
+import XCTest
 
 @testable import Harmony
 
@@ -19,48 +19,48 @@ class FetchRemoteRecordsOperationTests: OperationTests {
     override func setUp() {
         super.setUp()
 
-        self.professorRemoteRecord = RemoteRecord.make(recordedObjectType: "Professor")
-        self.courseRemoteRecord = RemoteRecord.make(recordedObjectType: "Course")
-        self.homeworkRemoteRecord = RemoteRecord.make(recordedObjectType: "Homework")
+        professorRemoteRecord = RemoteRecord.make(recordedObjectType: "Professor")
+        courseRemoteRecord = RemoteRecord.make(recordedObjectType: "Course")
+        homeworkRemoteRecord = RemoteRecord.make(recordedObjectType: "Homework")
 
-        self.service.records = [self.professorRemoteRecord, self.courseRemoteRecord, self.homeworkRemoteRecord]
-        self.service.changes = [self.professorRemoteRecord]
+        service.records = [professorRemoteRecord, courseRemoteRecord, homeworkRemoteRecord]
+        service.changes = [professorRemoteRecord]
     }
 }
 
 extension FetchRemoteRecordsOperationTests {
     override func prepareTestOperation() -> (Foundation.Operation & ProgressReporting) {
-        let operation = FetchRemoteRecordsOperation(service: self.service, changeToken: self.service.latestChangeToken, managedObjectContext: self.recordController.viewContext)
+        let operation = FetchRemoteRecordsOperation(service: service, changeToken: service.latestChangeToken, managedObjectContext: recordController.viewContext)
         return operation
     }
 }
 
 extension FetchRemoteRecordsOperationTests {
     func testInitializationWithChangeToken() {
-        let operation = FetchRemoteRecordsOperation(service: self.service, changeToken: self.service.latestChangeToken, managedObjectContext: self.recordController.viewContext)
+        let operation = FetchRemoteRecordsOperation(service: service, changeToken: service.latestChangeToken, managedObjectContext: recordController.viewContext)
 
-        XCTAssert(operation.service == self.service)
-        XCTAssertEqual(operation.changeToken, self.service.latestChangeToken)
-        XCTAssertEqual(operation.managedObjectContext, self.recordController.viewContext)
+        XCTAssert(operation.service == service)
+        XCTAssertEqual(operation.changeToken, service.latestChangeToken)
+        XCTAssertEqual(operation.managedObjectContext, recordController.viewContext)
 
-        self.operationExpectation.fulfill()
+        operationExpectation.fulfill()
     }
 
     func testInitializationWithoutChangeToken() {
-        let operation = FetchRemoteRecordsOperation(service: self.service, changeToken: nil, managedObjectContext: self.recordController.viewContext)
+        let operation = FetchRemoteRecordsOperation(service: service, changeToken: nil, managedObjectContext: recordController.viewContext)
 
-        XCTAssert(operation.service == self.service)
+        XCTAssert(operation.service == service)
         XCTAssertNil(operation.changeToken)
-        XCTAssertEqual(operation.managedObjectContext, self.recordController.viewContext)
+        XCTAssertEqual(operation.managedObjectContext, recordController.viewContext)
 
-        self.operationExpectation.fulfill()
+        operationExpectation.fulfill()
     }
 }
 
 extension FetchRemoteRecordsOperationTests {
     func testExecutionWithChangeToken() {
-        let operation = FetchRemoteRecordsOperation(service: self.service, changeToken: self.service.latestChangeToken, managedObjectContext: self.recordController.viewContext)
-        operation.resultHandler = { (result) in
+        let operation = FetchRemoteRecordsOperation(service: service, changeToken: service.latestChangeToken, managedObjectContext: recordController.viewContext)
+        operation.resultHandler = { result in
             XCTAssert(self.recordController.viewContext.hasChanges)
 
             // As of Swift 4.1, we cannot use XCTAssertThrowsError or else the compiler incorrectly thinks this closure is a throwing closure, ugh.
@@ -73,12 +73,12 @@ extension FetchRemoteRecordsOperationTests {
                 print(error)
             }
         }
-        self.operationQueue.addOperation(operation)
+        operationQueue.addOperation(operation)
     }
 
     func testExecutionWithoutChangeToken() {
-        let operation = FetchRemoteRecordsOperation(service: self.service, changeToken: nil, managedObjectContext: self.recordController.viewContext)
-        operation.resultHandler = { (result) in
+        let operation = FetchRemoteRecordsOperation(service: service, changeToken: nil, managedObjectContext: recordController.viewContext)
+        operation.resultHandler = { result in
             XCTAssert(self.recordController.viewContext.hasChanges)
 
             do {
@@ -91,14 +91,14 @@ extension FetchRemoteRecordsOperationTests {
                 print(error)
             }
         }
-        self.operationQueue.addOperation(operation)
+        operationQueue.addOperation(operation)
     }
 
     func testExecutionWithInvalidChangeToken() {
         let changeToken = Data(bytes: [22])
 
-        let operation = FetchRemoteRecordsOperation(service: self.service, changeToken: changeToken, managedObjectContext: self.recordController.viewContext)
-        operation.resultHandler = { (result) in
+        let operation = FetchRemoteRecordsOperation(service: service, changeToken: changeToken, managedObjectContext: recordController.viewContext)
+        operation.resultHandler = { result in
             do {
                 _ = try result.value()
             } catch FetchRecordsError.invalidChangeToken {
@@ -107,25 +107,25 @@ extension FetchRemoteRecordsOperationTests {
                 print(error)
             }
         }
-        self.operationQueue.addOperation(operation)
+        operationQueue.addOperation(operation)
     }
 
     func testExecutionWithInvalidManagedObjectContext() {
         class InvalidManagedObjectContext: NSManagedObjectContext {
             struct TestError: Swift.Error {}
 
-            override func fetch(_ request: NSFetchRequest<NSFetchRequestResult>) throws -> [Any] {
+            override func fetch(_: NSFetchRequest<NSFetchRequestResult>) throws -> [Any] {
                 throw TestError()
             }
         }
 
-        self.performSaveInTearDown = false
+        performSaveInTearDown = false
 
         let invalidManagedObjectContext = InvalidManagedObjectContext(concurrencyType: .mainQueueConcurrencyType)
-        invalidManagedObjectContext.persistentStoreCoordinator = self.recordController.persistentStoreCoordinator
+        invalidManagedObjectContext.persistentStoreCoordinator = recordController.persistentStoreCoordinator
 
-        let operation = FetchRemoteRecordsOperation(service: self.service, changeToken: nil, managedObjectContext: invalidManagedObjectContext)
-        operation.resultHandler = { (result) in
+        let operation = FetchRemoteRecordsOperation(service: service, changeToken: nil, managedObjectContext: invalidManagedObjectContext)
+        operation.resultHandler = { result in
             do {
                 _ = try result.value()
             } catch is InvalidManagedObjectContext.TestError {
@@ -134,21 +134,21 @@ extension FetchRemoteRecordsOperationTests {
                 print(error)
             }
         }
-        self.operationQueue.addOperation(operation)
+        operationQueue.addOperation(operation)
     }
 }
 
 extension FetchRemoteRecordsOperationTests {
     func testExecutionByUpdatingExistingLocalRecord() {
-        self.professorRemoteRecord.status = .updated
+        professorRemoteRecord.status = .updated
 
-        let professor = Professor.make(identifier: self.professorRemoteRecord.recordedObjectIdentifier)
+        let professor = Professor.make(identifier: professorRemoteRecord.recordedObjectIdentifier)
 
-        let localRecord = try! LocalRecord(recordedObject: professor, managedObjectContext: self.recordController.viewContext)
+        let localRecord = try! LocalRecord(recordedObject: professor, managedObjectContext: recordController.viewContext)
         try! localRecord.managedObjectContext?.save()
 
-        let operation = FetchRemoteRecordsOperation(service: self.service, changeToken: self.service.latestChangeToken, managedObjectContext: self.recordController.viewContext)
-        operation.resultHandler = { (result) in
+        let operation = FetchRemoteRecordsOperation(service: service, changeToken: service.latestChangeToken, managedObjectContext: recordController.viewContext)
+        operation.resultHandler = { result in
 
             XCTAssert(self.recordController.viewContext.hasChanges)
 
@@ -164,7 +164,7 @@ extension FetchRemoteRecordsOperationTests {
 
                 try! self.recordController.viewContext.save()
 
-                self.recordController.performBackgroundTask { (context) in
+                self.recordController.performBackgroundTask { context in
                     let localRecord = context.object(with: localRecord.objectID) as! LocalRecord
 
                     do {
@@ -186,6 +186,6 @@ extension FetchRemoteRecordsOperationTests {
                 print(error)
             }
         }
-        self.operationQueue.addOperation(operation)
+        operationQueue.addOperation(operation)
     }
 }

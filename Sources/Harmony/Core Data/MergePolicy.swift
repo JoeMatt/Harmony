@@ -9,8 +9,8 @@
 import CoreData
 import Roxas
 
-extension MergePolicy {
-    public enum Error: LocalizedError {
+public extension MergePolicy {
+    enum Error: LocalizedError {
         case contextLevelConflict
 
         public var errorDescription: String? {
@@ -23,7 +23,7 @@ extension MergePolicy {
 }
 
 open class MergePolicy: RSTRelationshipPreservingMergePolicy {
-    open override func resolve(constraintConflicts conflicts: [NSConstraintConflict]) throws {
+    override open func resolve(constraintConflicts conflicts: [NSConstraintConflict]) throws {
         for conflict in conflicts {
             guard conflict.databaseObject == nil else { continue }
             guard let conflictingObject = conflict.conflictingObjects.first else { continue }

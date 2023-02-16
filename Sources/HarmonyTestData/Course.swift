@@ -6,21 +6,20 @@
 //  Copyright © 2017 Riley Testut. All rights reserved.
 //
 
-import Foundation
 import CoreData
+import Foundation
 
 import Harmony
 
 @objc(Course)
-public class Course: NSManagedObject {
-}
+public class Course: NSManagedObject {}
 
 extension Course: Syncable {
     public class var syncablePrimaryKey: AnyKeyPath {
-        return \Course.identifier
+        \Course.identifier
     }
 
     public var syncableKeys: Set<AnyKeyPath> {
-        return [\Course.name]
+        [\Course.name]
     }
 }

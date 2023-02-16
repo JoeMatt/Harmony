@@ -6,8 +6,8 @@
 //  Copyright © 2018 Riley Testut. All rights reserved.
 //
 
-import Foundation
 import CoreData
+import Foundation
 import UIKit
 
 @testable import Harmony
@@ -42,7 +42,6 @@ extension MockService: Service {
         let progress = Progress(totalUnitCount: 0)
 
         context.perform {
-
             let result: Result<(Set<RemoteRecord>, Set<String>, Data), FetchError>
 
             if changeToken == self.latestChangeToken {
@@ -60,44 +59,41 @@ extension MockService: Service {
         return progress
     }
 
-    func authenticate(withPresentingViewController viewController: UIViewController, completionHandler: @escaping (Result<Account, AuthenticationError>) -> Void) {
-    }
+    func authenticate(withPresentingViewController _: UIViewController, completionHandler _: @escaping (Result<Account, AuthenticationError>) -> Void) {}
 
-    func authenticateInBackground(completionHandler: @escaping (Result<Account, AuthenticationError>) -> Void) {
-    }
+    func authenticateInBackground(completionHandler _: @escaping (Result<Account, AuthenticationError>) -> Void) {}
 
-    func deauthenticate(completionHandler: @escaping (Result<Void, DeauthenticationError>) -> Void) {
-    }
+    func deauthenticate(completionHandler _: @escaping (Result<Void, DeauthenticationError>) -> Void) {}
 
-    func upload(_ record: AnyRecord, metadata: [HarmonyMetadataKey: Any], context: NSManagedObjectContext, completionHandler: @escaping (Result<RemoteRecord, RecordError>) -> Void) -> Progress {
+    func upload(_: AnyRecord, metadata _: [HarmonyMetadataKey: Any], context _: NSManagedObjectContext, completionHandler _: @escaping (Result<RemoteRecord, RecordError>) -> Void) -> Progress {
         fatalError()
     }
 
-    func download(_ record: AnyRecord, version: Version, context: NSManagedObjectContext, completionHandler: @escaping (Result<LocalRecord, RecordError>) -> Void) -> Progress {
+    func download(_: AnyRecord, version _: Version, context _: NSManagedObjectContext, completionHandler _: @escaping (Result<LocalRecord, RecordError>) -> Void) -> Progress {
         fatalError()
     }
 
-    func delete(_ record: AnyRecord, completionHandler: @escaping (Result<Void, RecordError>) -> Void) -> Progress {
+    func delete(_: AnyRecord, completionHandler _: @escaping (Result<Void, RecordError>) -> Void) -> Progress {
         fatalError()
     }
 
-    func upload(_ file: File, for record: AnyRecord, metadata: [HarmonyMetadataKey: Any], context: NSManagedObjectContext, completionHandler: @escaping (Result<RemoteFile, FileError>) -> Void) -> Progress {
+    func upload(_: File, for _: AnyRecord, metadata _: [HarmonyMetadataKey: Any], context _: NSManagedObjectContext, completionHandler _: @escaping (Result<RemoteFile, FileError>) -> Void) -> Progress {
         fatalError()
     }
 
-    func download(_ remoteFile: RemoteFile, completionHandler: @escaping (Result<File, FileError>) -> Void) -> Progress {
+    func download(_: RemoteFile, completionHandler _: @escaping (Result<File, FileError>) -> Void) -> Progress {
         fatalError()
     }
 
-    func delete(_ remoteFile: RemoteFile, completionHandler: @escaping (Result<Void, FileError>) -> Void) -> Progress {
+    func delete(_: RemoteFile, completionHandler _: @escaping (Result<Void, FileError>) -> Void) -> Progress {
         fatalError()
     }
 
-    func updateMetadata(_ metadata: [HarmonyMetadataKey: Any], for record: AnyRecord, completionHandler: @escaping (Result<Void, RecordError>) -> Void) -> Progress {
+    func updateMetadata(_: [HarmonyMetadataKey: Any], for _: AnyRecord, completionHandler _: @escaping (Result<Void, RecordError>) -> Void) -> Progress {
         fatalError()
     }
 
-    func fetchVersions(for record: AnyRecord, completionHandler: @escaping (Result<[Version], RecordError>) -> Void) -> Progress {
+    func fetchVersions(for _: AnyRecord, completionHandler _: @escaping (Result<[Version], RecordError>) -> Void) -> Progress {
         fatalError()
     }
 }

@@ -6,15 +6,15 @@
 //  Copyright © 2018 Riley Testut. All rights reserved.
 //
 
-import Foundation
 import CoreData
+import Foundation
 
 class UpdateRecordMetadataOperation: RecordOperation<Void> {
     var metadata = [HarmonyMetadataKey: Any]()
 
     required init<T: NSManagedObject>(record: Record<T>, coordinator: SyncCoordinator, context: NSManagedObjectContext) throws {
-        self.metadata[.recordedObjectType] = record.recordID.type
-        self.metadata[.recordedObjectIdentifier] = record.recordID.identifier
+        metadata[.recordedObjectType] = record.recordID.type
+        metadata[.recordedObjectIdentifier] = record.recordID.identifier
 
         try super.init(record: record, coordinator: coordinator, context: context)
     }
@@ -22,10 +22,10 @@ class UpdateRecordMetadataOperation: RecordOperation<Void> {
     override func main() {
         super.main()
 
-        let operation = ServiceOperation(coordinator: self.coordinator) { (completionHandler) -> Progress? in
-            return self.service.updateMetadata(self.metadata, for: self.record, completionHandler: completionHandler)
-        }
-        operation.resultHandler = { (result) in
+        let operation = ServiceOperation(coordinator: coordinator) { completionHandler -> Progress? in
+                self.service.updateMetadata(self.metadata, for: self.record, completionHandler: completionHandler)
+            }
+        operation.resultHandler = { result in
             do {
                 try result.get()
 
@@ -37,7 +37,7 @@ class UpdateRecordMetadataOperation: RecordOperation<Void> {
             self.finish()
         }
 
-        self.progress.addChild(operation.progress, withPendingUnitCount: 1)
-        self.operationQueue.addOperation(operation)
+        progress.addChild(operation.progress, withPendingUnitCount: 1)
+        operationQueue.addOperation(operation)
     }
 }

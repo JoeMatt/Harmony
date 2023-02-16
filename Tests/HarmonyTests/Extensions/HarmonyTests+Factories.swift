@@ -6,10 +6,10 @@
 //  Copyright © 2018 Riley Testut. All rights reserved.
 //
 
-import Foundation
 import CoreData
-@testable @_implementationOnly import HarmonyTestData
+import Foundation
 @testable import Harmony
+@testable @_implementationOnly import HarmonyTestData
 
 extension NSManagedObjectContext {
     static var harmonyTestsFactoryDefault: NSManagedObjectContext!

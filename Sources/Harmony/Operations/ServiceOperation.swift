@@ -6,8 +6,8 @@
 //  Copyright © 2019 Riley Testut. All rights reserved.
 //
 
-import Roxas
 @_implementationOnly import os.log
+import Roxas
 
 class ServiceOperation<R, E: Error>: Operation<R, Error> {
     var requiresAuthentication = true
@@ -20,7 +20,7 @@ class ServiceOperation<R, E: Error>: Operation<R, Error> {
     private var taskProgress: Progress?
 
     override var isAsynchronous: Bool {
-        return true
+        true
     }
 
     init(coordinator: SyncCoordinator, task: @escaping (@escaping (Result<R, E>) -> Void) -> Progress?) {
@@ -32,25 +32,27 @@ class ServiceOperation<R, E: Error>: Operation<R, Error> {
     override func main() {
         super.main()
 
-        self.performTask()
+        performTask()
     }
 }
 
 private extension ServiceOperation {
     func performTask() {
-        guard !self.isCancelled else {
-            self.result = .failure(GeneralError.cancelled)
-            self.finish()
+        guard !isCancelled
+        else {
+            result = .failure(GeneralError.cancelled)
+            finish()
             return
         }
 
-        guard self.coordinator.isAuthenticated || !self.requiresAuthentication else {
-            self.coordinator.authenticate { (result) in
+        guard coordinator.isAuthenticated || !requiresAuthentication
+        else {
+            coordinator.authenticate { result in
                 switch result {
                 case .success:
                     self.performTask()
 
-                case .failure(let error):
+                case let .failure(error):
                     self.result = .failure(error)
                     self.finish()
                 }
@@ -59,7 +61,7 @@ private extension ServiceOperation {
             return
         }
 
-        self.taskProgress = self.task() { (result) in
+        taskProgress = task { result in
             let result = result.mapError { $0 as Error }
 
             if let progress = self.taskProgress {
@@ -78,7 +80,8 @@ private extension ServiceOperation {
                 self.result = result
                 self.finish()
             } catch ServiceError.rateLimitExceeded.self {
-                guard self.retryDelay < 60 else {
+                guard self.retryDelay < 60
+                else {
                     self.result = result
                     self.finish()
                     return
@@ -95,7 +98,7 @@ private extension ServiceOperation {
             } catch AuthenticationError.tokenExpired.self where !self.didAttemptReauthentication && self.requiresAuthentication {
                 self.didAttemptReauthentication = true
 
-                self.coordinator.authenticate() { (authResult) in
+                self.coordinator.authenticate { authResult in
                     switch authResult {
                     case .success:
                         self.performTask()
@@ -112,7 +115,7 @@ private extension ServiceOperation {
             }
         }
 
-        if let progress = self.taskProgress {
+        if let progress = taskProgress {
             self.progress.addChild(progress, withPendingUnitCount: 1)
         }
     }

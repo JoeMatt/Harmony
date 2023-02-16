@@ -6,14 +6,14 @@
 //  Copyright © 2018 Riley Testut. All rights reserved.
 //
 
-import Foundation
 import CoreData
+import Foundation
 
 extension Record {
     func missingRelationships(in recordIDs: Set<RecordID>) -> [String: RecordID] {
         var missingRelationships = [String: RecordID]()
 
-        self.perform { (managedRecord) in
+        perform { managedRecord in
             guard let localRecord = managedRecord.localRecord, let recordedObject = localRecord.recordedObject else { return }
 
             for (key, relationshipObject) in recordedObject.syncableRelationshipObjects {
@@ -31,17 +31,17 @@ extension Record {
     }
 
     class func remoteRelationshipRecordIDs(for records: [Record<T>], in context: NSManagedObjectContext) throws -> Set<RecordID> {
-        let predicates = records.flatMap { (record) -> [NSPredicate] in
-            record.perform { (managedRecord) in
+        let predicates = records.flatMap { record -> [NSPredicate] in
+            record.perform { managedRecord in
                 guard let localRecord = managedRecord.localRecord, let recordedObject = localRecord.recordedObject else { return [] }
 
-                let predicates = recordedObject.syncableRelationshipObjects.values.compactMap { (relationshipObject) -> NSPredicate? in
-                    guard let identifier = relationshipObject.syncableIdentifier else { return nil }
+                let predicates = recordedObject.syncableRelationshipObjects.values.compactMap { relationshipObject -> NSPredicate? in
+                        guard let identifier = relationshipObject.syncableIdentifier else { return nil }
 
-                    return NSPredicate(format: "%K == %@ AND %K == %@",
-                                       #keyPath(RemoteRecord.recordedObjectType), relationshipObject.syncableType,
-                                       #keyPath(RemoteRecord.recordedObjectIdentifier), identifier)
-                }
+                        return NSPredicate(format: "%K == %@ AND %K == %@",
+                                           #keyPath(RemoteRecord.recordedObjectType), relationshipObject.syncableType,
+                                           #keyPath(RemoteRecord.recordedObjectIdentifier), identifier)
+                    }
 
                 return predicates
             }
