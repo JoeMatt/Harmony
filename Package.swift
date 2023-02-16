@@ -45,7 +45,9 @@ let package = Package(
             ],
             publicHeadersPath: "include",
             linkerSettings: [
-                .linkedFramework("UIKit"),
+				.linkedFramework("UIKit", .when(platforms: [.iOS, .tvOS, .macCatalyst])),
+				.linkedFramework("AppKit", .when(platforms: [.macOS])),
+				.linkedFramework("Cocoa", .when(platforms: [.macOS])),
                 .linkedFramework("CoreData")
             ]
         ),
@@ -57,16 +59,42 @@ let package = Package(
 				.process("Resources/")
 			]
 	   ),
+		// TODO: Make internal targets for UIKit resources and then conditionally depend @JoeMatt
+		.target(
+			name: "HarmonyExample-iOS",
+			resources: [
+				.process("Resources/")
+			]
+		),
+		.target(
+			name: "HarmonyExample-tvOS",
+			resources: [
+				.process("Resources/")
+			]
+		),
+		.target(
+			name: "HarmonyExample-macOS",
+			resources: [
+				.process("Resources/")
+			]
+		),
         .executableTarget(
             name: "HarmonyExample",
-			dependencies: [ "Harmony", "HarmonyTestData",
-							.product(name: "RoxasUI", package: "Roxas", condition: .when(platforms: [.iOS, .tvOS, .macCatalyst]))],
+			dependencies: [
+				"Harmony",
+				"HarmonyTestData",
+				.target(name: "HarmonyExample-iOS", condition: .when(platforms: [.iOS, .macCatalyst])),
+				.target(name: "HarmonyExample-tvOS", condition: .when(platforms: [.tvOS])),
+				.target(name: "HarmonyExample-macOS", condition: .when(platforms: [.macOS])),
+				.product(name: "RoxasUI", package: "Roxas", condition: .when(platforms: [.iOS, .tvOS, .macCatalyst]))
+			],
             resources: [
-                .copy("Resources/GoogleService-Info.plist"),
-                .process("Resources/UIKit")
+                .copy("Resources/GoogleService-Info.plist")
             ],
             linkerSettings: [
-                .linkedFramework("UIKit"),
+				.linkedFramework("UIKit", .when(platforms: [.iOS, .tvOS, .macCatalyst])),
+				.linkedFramework("AppKit", .when(platforms: [.macOS])),
+				.linkedFramework("Cocoa", .when(platforms: [.macOS])),
                 .linkedFramework("CoreData")
             ]
         ),

@@ -8,9 +8,11 @@
 
 import CoreData
 import Foundation
-import UIKit
-
 @testable import Harmony
+
+#if canImport(UIKit)
+import UIKit
+#endif
 
 struct MockService {
     let localizedName = "MockService"
@@ -59,7 +61,11 @@ extension MockService: Service {
         return progress
     }
 
+	#if canImport(UIKit)
     func authenticate(withPresentingViewController _: UIViewController, completionHandler _: @escaping (Result<Account, AuthenticationError>) -> Void) {}
+	#else
+	func authenticate(completionHandler _: @escaping (Result<Account, AuthenticationError>) -> Void) {}
+	#endif
 
     func authenticateInBackground(completionHandler _: @escaping (Result<Account, AuthenticationError>) -> Void) {}
 

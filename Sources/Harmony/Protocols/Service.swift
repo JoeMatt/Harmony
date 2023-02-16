@@ -58,7 +58,7 @@ public extension Equatable where Self: Service {
     }
 }
 
-@available(iOS 13.0, *)
+@available(tvOS 13.0, *)
 public extension Identifiable where Self: Service {
     var id: String { identifier }
 }

@@ -8,14 +8,30 @@
 
 #if canImport(UIKit)
 import UIKit
+#if os(iOS) || targetEnvironment(macCatalyst)
+import HarmonyExample_iOS
+var MainStoryboard: UIStoryboard { HarmonyExample_iOS.main }
+
+#elseif os(tvOS)
+import HarmonyExample_tvOS
+var MainStoryboard: UIStoryboard { HarmonyExample_tvOS.main }
+#else
+#error ("Unsupported OS")
+#endif
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
 
     func application(_: UIApplication, didFinishLaunchingWithOptions _: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Override point for customization after application launch.
-        true
+		let storyboard: UIStoryboard = MainStoryboard
+		self.window = UIWindow(frame: UIScreen.main.bounds)
+		let rootVC = storyboard.instantiateInitialViewController()
+
+		self.window?.rootViewController = rootVC
+		self.window?.makeKeyAndVisible()
+
+        return true
     }
 
     func applicationWillResignActive(_: UIApplication) {
@@ -43,13 +59,18 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 #else
 import AppKit
 import Cocoa
+import HarmonyExample_macOS
 
 @NSApplicationMain
 class AppDelegate: NSResponder, NSApplicationDelegate {
 	var window: NSWindow?
 
 	func applicationDidFinishLaunching(_ notification: Notification) {
-		// Override point for customization after application launch.
+		let storyboard: NSStoryboard = HarmonyExample_macOS.main
+		let window = storyboard.instantiateController(withIdentifier: "MainWindow") as! NSWindowController
+		let rootController = storyboard.instantiateInitialController() as! NSViewController
+		window.contentViewController = rootController
+		window.showWindow(self)
 	}
 
 	func applicationWillBecomeActive(_ notification: Notification) {
