@@ -9,9 +9,10 @@ let package = Package(
     platforms: [
         .iOS(.v12),
         .tvOS(.v12),
-        .macCatalyst(.v13)
-    ],
-    products: [
+        .macCatalyst(.v13),
+		.macOS(.v12)
+	],
+	products: [
         .library(
             name: "Harmony",
             targets: ["Harmony"]
@@ -26,15 +27,12 @@ let package = Package(
             type: .static,
             targets: ["Harmony"]
         ),
-//        .executable(name: "Example", targets: ["Example"])
+        .executable(name: "HarmonyExample", targets: ["HarmonyExample"]),
     ],
     dependencies: [
-         .package(url: "https://github.com/JoeMatt/Roxas.git", from: "1.1.1"),
-         .package(url: "https://github.com/mattgallagher/CwlPreconditionTesting.git", from: Version("2.0.0"))
-         //        .package(path: "../Roxas")
-         // Technically, example needs this, but results in circular include
-//         .package(url: "https://github.com/JoeMatt/Harmony-Drive.git", from: "1.0.0"),
-//
+         .package(url: "https://github.com/mattgallagher/CwlPreconditionTesting.git", from: Version("2.0.0")),
+         .package(url: "https://github.com/JoeMatt/Roxas.git", from: "1.2.0")
+//        .package(path: "../Roxas")
     ],
     targets: [
         .target(
@@ -47,25 +45,63 @@ let package = Package(
             ],
             publicHeadersPath: "include",
             linkerSettings: [
-                .linkedFramework("UIKit"),
+				.linkedFramework("UIKit", .when(platforms: [.iOS, .tvOS, .macCatalyst])),
+				.linkedFramework("AppKit", .when(platforms: [.macOS])),
+				.linkedFramework("Cocoa", .when(platforms: [.macOS])),
                 .linkedFramework("CoreData")
             ]
         ),
-//        .executableTarget(
-//            name: "Example",
-//            dependencies: ["Harmony", "Roxas"],
-//            resources: [
-//                .copy("Resources/GoogleService-Info.plist"),
-//                .process("Resources/UIKit")
-//            ],
-//            linkerSettings: [
-//                .linkedFramework("UIKit"),
-//                .linkedFramework("CoreData")
-//            ]
-//        ),
+		// Tests
+		.target(
+			name: "HarmonyTestData",
+			dependencies: ["Harmony"],
+			resources: [
+				.process("Resources/")
+			]
+	   ),
+		// TODO: Make internal targets for UIKit resources and then conditionally depend @JoeMatt
+		.target(
+			name: "HarmonyExample-iOS",
+			resources: [
+				.process("Resources/")
+			]
+		),
+		.target(
+			name: "HarmonyExample-tvOS",
+			resources: [
+				.process("Resources/")
+			]
+		),
+		.target(
+			name: "HarmonyExample-macOS",
+			resources: [
+				.process("Resources/")
+			]
+		),
+        .executableTarget(
+            name: "HarmonyExample",
+			dependencies: [
+				"Harmony",
+				"HarmonyTestData",
+				.target(name: "HarmonyExample-iOS", condition: .when(platforms: [.iOS, .macCatalyst])),
+				.target(name: "HarmonyExample-tvOS", condition: .when(platforms: [.tvOS])),
+				.target(name: "HarmonyExample-macOS", condition: .when(platforms: [.macOS])),
+				.product(name: "RoxasUI", package: "Roxas", condition: .when(platforms: [.iOS, .tvOS, .macCatalyst]))
+			],
+            resources: [
+                .copy("Resources/GoogleService-Info.plist")
+            ],
+            linkerSettings: [
+				.linkedFramework("UIKit", .when(platforms: [.iOS, .tvOS, .macCatalyst])),
+				.linkedFramework("AppKit", .when(platforms: [.macOS])),
+				.linkedFramework("Cocoa", .when(platforms: [.macOS])),
+                .linkedFramework("CoreData")
+            ]
+        ),
         .testTarget(
             name: "HarmonyTests",
-            dependencies: ["Harmony", "CwlPreconditionTesting"]
+            dependencies: ["Harmony", "CwlPreconditionTesting", "HarmonyTestData"]
         )
-    ]
+    ],
+	swiftLanguageVersions: [.v5]
 )

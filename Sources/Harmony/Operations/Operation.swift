@@ -6,96 +6,83 @@
 //  Copyright © 2018 Riley Testut. All rights reserved.
 //
 
-import Foundation
 import CoreData
+import Foundation
 
 import Roxas
 
-class Operation<ResultType, ErrorType: Swift.Error>: RSTOperation, ProgressReporting
-{
+class Operation<ResultType, ErrorType: Swift.Error>: RSTOperation, ProgressReporting {
     let coordinator: SyncCoordinator
-    
+
     let progress = Progress.discreteProgress(totalUnitCount: 1)
-    
+
     let operationQueue: OperationQueue
-    
-    var result: Result<ResultType, ErrorType>?
-    var resultHandler: ((Result<ResultType, ErrorType>) -> Void)?
-    
-    var service: Service {
-        return self.coordinator.service
+
+    public typealias OperationResult = Result<ResultType, ErrorType>
+    var result: OperationResult?
+    var resultHandler: ((OperationResult) -> Void)?
+
+    var service: any Service {
+        self.coordinator.service
     }
-    
+
     var recordController: RecordController {
-        return self.coordinator.recordController
+        coordinator.recordController
     }
-    
-    init(coordinator: SyncCoordinator)
-    {
+
+    init(coordinator: SyncCoordinator) {
         self.coordinator = coordinator
-        
-        self.operationQueue = OperationQueue()
-        self.operationQueue.name = "com.rileytestut.Harmony.\(type(of: self)).operationQueue"
-        self.operationQueue.qualityOfService = .utility
-        
+
+        operationQueue = OperationQueue()
+        operationQueue.name = "com.rileytestut.Harmony.\(type(of: self)).operationQueue"
+        operationQueue.qualityOfService = .utility
+
         super.init()
-        
-        self.progress.cancellationHandler = { [weak self] in
+
+        progress.cancellationHandler = { [weak self] in
             self?.cancel()
         }
     }
-    
-    public override func cancel()
-    {
+
+    override public func cancel() {
         super.cancel()
-        
-        if !self.progress.isCancelled
-        {
-            self.progress.cancel()
+
+        if !progress.isCancelled {
+            progress.cancel()
         }
-        
-        self.operationQueue.cancelAllOperations()
+
+        operationQueue.cancelAllOperations()
     }
-    
-    public override func finish()
-    {
-        guard !self.isFinished else {
+
+    override public func finish() {
+        guard !isFinished
+        else {
             return
         }
-        
+
         super.finish()
-        
-        if !self.progress.isFinished
-        {
-            self.progress.completedUnitCount = self.progress.totalUnitCount
+
+        if !progress.isFinished {
+            progress.completedUnitCount = progress.totalUnitCount
         }
-        
+
         let result: Result<ResultType, ErrorType>?
-        
-        if self.isCancelled
-        {
+
+        if isCancelled {
             let cancelledResult = Result<ResultType, Swift.Error>.failure(GeneralError.cancelled)
-            
-            if let cancelledResult = cancelledResult as? Result<ResultType, ErrorType>
-            {
+
+            if let cancelledResult = cancelledResult as? Result<ResultType, ErrorType> {
                 result = cancelledResult
-            }
-            else
-            {
+            } else {
                 result = self.result
             }
-        }
-        else
-        {
+        } else {
             result = self.result
         }
-        
-        if let resultHandler = self.resultHandler, let result = result
-        {
+
+        if let resultHandler = resultHandler, let result = result {
             resultHandler(result)
-        }
-        else
-        {
+        } else {
             assertionFailure("There should always be a result handler and a result.")
         }
     }

@@ -6,31 +6,28 @@
 //  Copyright © 2018 Riley Testut. All rights reserved.
 //
 
-import Foundation
 import CoreData
+import Foundation
 
-private extension CodingUserInfoKey
-{
+private extension CodingUserInfoKey {
     static let managedObjectContext = CodingUserInfoKey(rawValue: "managedObjectContext")!
 }
 
-public extension JSONDecoder
-{
+public extension JSONDecoder {
     var managedObjectContext: NSManagedObjectContext? {
         get {
-            let managedObjectContext = self.userInfo[.managedObjectContext] as? NSManagedObjectContext
+            let managedObjectContext = userInfo[.managedObjectContext] as? NSManagedObjectContext
             return managedObjectContext
         }
         set {
-            self.userInfo[.managedObjectContext] = newValue
+            userInfo[.managedObjectContext] = newValue
         }
     }
 }
 
-public extension Decoder
-{
+public extension Decoder {
     var managedObjectContext: NSManagedObjectContext? {
-        let managedObjectContext = self.userInfo[.managedObjectContext] as? NSManagedObjectContext
+        let managedObjectContext = userInfo[.managedObjectContext] as? NSManagedObjectContext
         return managedObjectContext
     }
 }

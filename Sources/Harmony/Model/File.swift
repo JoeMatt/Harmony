@@ -8,13 +8,11 @@
 
 import Foundation
 
-public struct File: Hashable
-{
+public struct File: Hashable {
     public var identifier: String
     public var fileURL: URL
-    
-    public init(identifier: String, fileURL: URL)
-    {
+
+    public init(identifier: String, fileURL: URL) {
         self.identifier = identifier
         self.fileURL = fileURL
     }

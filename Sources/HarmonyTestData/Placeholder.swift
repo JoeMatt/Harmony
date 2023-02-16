@@ -6,12 +6,10 @@
 //  Copyright © 2018 Riley Testut. All rights reserved.
 //
 
-import Foundation
 import CoreData
+import Foundation
 
 import Harmony
 
 @objc(Placeholder)
-public class Placeholder: NSManagedObject
-{
-}
+public class Placeholder: NSManagedObject {}

@@ -1,0 +1,23 @@
+name: Swift PM
+
+on:
+  pull_request:
+    types:
+      - reopened
+      - opened
+      - synchronize
+
+jobs:
+  swift-pm:
+
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@master
+    - run: swift --version
+    - name: Resolve
+      run: swift package resolve
+    - name: Build
+      run: swift build -v
+    - name: Run tests
+      run: swift test --parallel -v

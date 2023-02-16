@@ -8,8 +8,7 @@
 
 import CoreData
 
-@objc public enum RecordStatus: Int16, CaseIterable
-{
+@objc public enum RecordStatus: Int16, CaseIterable {
     case normal
     case updated
     case deleted
@@ -17,84 +16,77 @@ import CoreData
 
 public typealias AnyRecord = Record<NSManagedObject>
 
-public struct RecordID: Hashable, Codable, CustomStringConvertible
-{
+public struct RecordID: Hashable, Codable, CustomStringConvertible {
     public var type: String
     public var identifier: String
-    
+
     public var description: String {
-        return self.type + "-" + self.identifier
+        type + "-" + identifier
     }
-    
-    public init(type: String, identifier: String)
-    {
+
+    public init(type: String, identifier: String) {
         self.type = type
         self.identifier = identifier
     }
 }
 
-public class Record<T: NSManagedObject>
-{
+public class Record<T: NSManagedObject> {
     public let recordID: RecordID
-    
+
     private let managedRecord: ManagedRecord
     private let managedRecordContext: NSManagedObjectContext?
-    
+
     public var localizedName: String? {
-        return self.perform { $0.localRecord?.recordedObject?.syncableLocalizedName ?? $0.remoteRecord?.localizedName }
+        perform { $0.localRecord?.recordedObject?.syncableLocalizedName ?? $0.remoteRecord?.localizedName }
     }
-    
+
     public var localMetadata: [HarmonyMetadataKey: String]? {
-        return self.perform { $0.localRecord?.recordedObject?.syncableMetadata }
+        perform { $0.localRecord?.recordedObject?.syncableMetadata }
     }
-    
+
     public var remoteMetadata: [HarmonyMetadataKey: String]? {
-        return self.perform { $0.remoteRecord?.metadata }
+        perform { $0.remoteRecord?.metadata }
     }
-    
+
     public var isConflicted: Bool {
-        return self.perform { $0.isConflicted }
+        perform { $0.isConflicted }
     }
-    
+
     public var isSyncingEnabled: Bool {
-        return self.perform { $0.isSyncingEnabled }
+        perform { $0.isSyncingEnabled }
     }
-    
+
     public var localStatus: RecordStatus? {
-        return self.perform { $0.localRecord?.status }
+        perform { $0.localRecord?.status }
     }
-    
+
     public var remoteStatus: RecordStatus? {
-        return self.perform { $0.remoteRecord?.status }
+        perform { $0.remoteRecord?.status }
     }
-    
+
     public var remoteVersion: Version? {
-        return self.perform { $0.remoteRecord?.version }
+        perform { $0.remoteRecord?.version }
     }
-    
+
     public var remoteAuthor: String? {
-        return self.perform { $0.remoteRecord?.author }
+        perform { $0.remoteRecord?.author }
     }
-    
+
     public var localModificationDate: Date? {
-        return self.perform { $0.localRecord?.modificationDate }
+        perform { $0.localRecord?.modificationDate }
     }
-    
+
     var shouldLockWhenUploading = false
-    
-    init(_ managedRecord: ManagedRecord)
-    {
+
+    init(_ managedRecord: ManagedRecord) {
         self.managedRecord = managedRecord
-        self.managedRecordContext = managedRecord.managedObjectContext
-        
+        managedRecordContext = managedRecord.managedObjectContext
+
         let recordID: RecordID
-        
-        if let context = self.managedRecordContext
-        {
+
+        if let context = managedRecordContext {
             recordID = context.performAndWait { managedRecord.recordID }
-        }
-        else
-        {
+        } else {
             recordID = managedRecord.recordID
         }
 
@@ -102,91 +94,71 @@ public class Record<T: NSManagedObject>
     }
 }
 
-extension Record
-{
-    public func perform<T>(in context: NSManagedObjectContext? = nil, closure: @escaping (ManagedRecord) -> T) -> T
-    {
-        if let context = context ?? self.managedRecordContext
-        {
+public extension Record {
+    func perform<T>(in context: NSManagedObjectContext? = nil, closure: @escaping (ManagedRecord) -> T) -> T {
+        if let context = context ?? managedRecordContext {
             return context.performAndWait {
                 let record = self.managedRecord.in(context)
                 return closure(record)
             }
-        }
-        else
-        {
-            return closure(self.managedRecord)
+        } else {
+            return closure(managedRecord)
         }
     }
-    
-    public func perform<T>(in context: NSManagedObjectContext? = nil, closure: @escaping (ManagedRecord) throws -> T) throws -> T
-    {
-        if let context = context ?? self.managedRecordContext
-        {
+
+    func perform<T>(in context: NSManagedObjectContext? = nil, closure: @escaping (ManagedRecord) throws -> T) throws -> T {
+        if let context = context ?? managedRecordContext {
             return try context.performAndWait {
                 let record = self.managedRecord.in(context)
                 return try closure(record)
             }
-        }
-        else
-        {
-            return try closure(self.managedRecord)
+        } else {
+            return try closure(managedRecord)
         }
     }
 }
 
-public extension Record where T == NSManagedObject
-{
+public extension Record where T == NSManagedObject {
     var recordedObject: Syncable? {
-        return self.perform { $0.localRecord?.recordedObject }
+        self.perform { $0.localRecord?.recordedObject }
     }
-    
-    convenience init<R>(_ record: Record<R>)
-    {
+
+    convenience init<R>(_ record: Record<R>) {
         let managedRecord = record.perform { $0 }
         self.init(managedRecord)
     }
 }
 
-public extension Record where T: Syncable
-{
+public extension Record where T: Syncable {
     var recordedObject: T? {
-        return self.perform { $0.localRecord?.recordedObject as? T }
+        perform { $0.localRecord?.recordedObject as? T }
     }
 }
 
-public extension Record
-{
-    func setSyncingEnabled(_ syncingEnabled: Bool) throws
-    {
-        let result = self.perform { (managedRecord) -> Result<Void, Error> in
-            do
-            {
+public extension Record {
+    func setSyncingEnabled(_ syncingEnabled: Bool) throws {
+        let result = perform { managedRecord -> Result<Void, Error> in
+            do {
                 managedRecord.isSyncingEnabled = syncingEnabled
-                
+
                 try managedRecord.managedObjectContext?.save()
-                
+
                 return .success
-            }
-            catch
-            {
+            } catch {
                 return .failure(error)
             }
         }
-        
+
         try result.get()
     }
 }
 
-extension Record: Hashable
-{
-    public static func ==(lhs: Record, rhs: Record) -> Bool
-    {
-        return lhs.recordID == rhs.recordID
+extension Record: Hashable {
+    public static func == (lhs: Record, rhs: Record) -> Bool {
+        lhs.recordID == rhs.recordID
     }
-    
-    public func hash(into hasher: inout Hasher)
-    {
-        hasher.combine(self.recordID)
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(recordID)
     }
 }

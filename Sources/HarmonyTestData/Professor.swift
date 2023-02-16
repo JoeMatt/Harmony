@@ -6,23 +6,20 @@
 //  Copyright © 2017 Riley Testut. All rights reserved.
 //
 
-import Foundation
 import CoreData
+import Foundation
 
 import Harmony
 
 @objc(Professor)
-public class Professor: NSManagedObject
-{    
-}
+public class Professor: NSManagedObject {}
 
-extension Professor: Syncable
-{
+extension Professor: Syncable {
     public class var syncablePrimaryKey: AnyKeyPath {
-        return \Professor.identifier
+        \Professor.identifier
     }
-    
+
     public var syncableKeys: Set<AnyKeyPath> {
-        return [\Professor.name]
+        [\Professor.name]
     }
 }

@@ -6,20 +6,18 @@
 //  Copyright © 2018 Riley Testut. All rights reserved.
 //
 
-import Foundation
 import CoreData
+import Foundation
 
-class ConflictRecordsOperation: BatchRecordOperation<Void, ConflictRecordOperation>
-{
+class ConflictRecordsOperation: BatchRecordOperation<Void, ConflictRecordOperation> {
     override class var predicate: NSPredicate {
-        return ManagedRecord.conflictRecordsPredicate
+        ManagedRecord.conflictRecordsPredicate
     }
-    
-    override func main()
-    {
+
+    override func main() {
         // Not worth having an additional state for just conflicting records.
-        self.syncProgress.status = .fetchingChanges
-        
+        syncProgress.status = .fetchingChanges
+
         super.main()
     }
 }

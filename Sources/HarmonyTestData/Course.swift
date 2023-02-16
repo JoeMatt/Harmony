@@ -1,28 +1,25 @@
 //
-//  Professor.swift
+//  Course.swift
 //  HarmonyTests
 //
 //  Created by Riley Testut on 10/21/17.
 //  Copyright © 2017 Riley Testut. All rights reserved.
 //
 
-import Foundation
 import CoreData
+import Foundation
 
 import Harmony
 
-@objc(Professor)
-public class Professor: NSManagedObject
-{    
-}
+@objc(Course)
+public class Course: NSManagedObject {}
 
-extension Professor: Syncable
-{
+extension Course: Syncable {
     public class var syncablePrimaryKey: AnyKeyPath {
-        return \Professor.identifier
+        \Course.identifier
     }
-    
+
     public var syncableKeys: Set<AnyKeyPath> {
-        return [\Professor.name]
+        [\Course.name]
     }
 }
