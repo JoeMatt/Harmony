@@ -9,11 +9,11 @@
 #if canImport(UIKit)
 import UIKit
 #if os(iOS) || targetEnvironment(macCatalyst)
-import HarmonyExample_iOS
+@_exported import HarmonyExample_iOS
 var MainStoryboard: UIStoryboard { HarmonyExample_iOS.main }
 
 #elseif os(tvOS)
-import HarmonyExample_tvOS
+@_exported import HarmonyExample_tvOS
 var MainStoryboard: UIStoryboard { HarmonyExample_tvOS.main }
 #else
 #error ("Unsupported OS")
@@ -59,7 +59,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 #else
 import AppKit
 import Cocoa
-import HarmonyExample_macOS
+@_exported import HarmonyExample_macOS
 
 @NSApplicationMain
 class AppDelegate: NSResponder, NSApplicationDelegate {

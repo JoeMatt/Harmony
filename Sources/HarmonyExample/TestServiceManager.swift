@@ -7,10 +7,9 @@
 
 import Foundation
 import CoreData
-@_implementationOnly import HarmonyTestData
-@_implementationOnly import os.log
-import Harmony
-import Roxas
+@_exported import HarmonyTestData
+@_exported import Harmony
+@_exported import Roxas
 
 public class ServiceManager {
 	public static let shared: ServiceManager = .init()

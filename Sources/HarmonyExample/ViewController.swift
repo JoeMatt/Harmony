@@ -8,14 +8,14 @@
 
 #if canImport(UIKit)
 import CoreData
-@_implementationOnly import HarmonyTestData
-@_implementationOnly import os.log
+@_exported import HarmonyTestData
+import os.log
 
 import UIKit
 
-import Harmony
-import RoxasUIKit
-import Roxas
+@_exported import Harmony
+@_exported import RoxasUIKit
+@_exported import Roxas
 
 class ViewController: UITableViewController {
     private var persistentContainer: NSPersistentContainer!
