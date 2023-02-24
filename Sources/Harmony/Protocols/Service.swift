@@ -20,7 +20,9 @@ public protocol Service: Equatable {
     var identifier: String { get }
 
     #if canImport(UIKit)
-        func authenticate(withPresentingViewController viewController: UIViewController, completionHandler: @escaping (AuthenticationResult) -> Void)
+        func authenticate(
+            withPresentingViewController viewController: UIViewController, 
+            completionHandler: @escaping (AuthenticationResult) -> Void)
     #else
         func authenticate(completionHandler: @escaping (AuthenticationResult) -> Void)
     #endif
@@ -44,6 +46,22 @@ public protocol Service: Equatable {
     func fetchVersions(for record: AnyRecord, completionHandler: @escaping (Result<[Version], RecordError>) -> Void) -> Progress
 }
 
+#if compiler(>=5.2) && canImport(_Concurrency)
+@available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
+public protocol AsyncService: Service {
+    func upload(_ record: AnyRecord, metadata: [HarmonyMetadataKey: Any], context: NSManagedObjectContext) async throws -> RemoteRecord
+    func download(_ record: AnyRecord, version: Version, context: NSManagedObjectContext) async throws -> LocalRecord
+    func delete(_ record: AnyRecord) async throws
+
+    func upload(_ file: File, for record: AnyRecord, metadata: [HarmonyMetadataKey: Any], context: NSManagedObjectContext) async throws -> RemoteFile
+    func download(_ remoteFile: RemoteFile) async throws -> File
+    func delete(_ remoteFile: RemoteFile) async throws
+
+    func updateMetadata(_ metadata: [HarmonyMetadataKey: Any], for record: AnyRecord) async throws
+    func fetchVersions(for record: AnyRecord) async throws -> [Version]
+}
+#endif
+
 public extension Equatable where Self: Service {
     static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.identifier == rhs.identifier
@@ -62,3 +80,11 @@ public extension Equatable where Self: Service {
 public extension Identifiable where Self: Service {
     var id: String { identifier }
 }
+
+#if compiler(>=5.8)
+@backDeploy(swift 5.1)
+public protocol Identifiable {
+    associatedtype ID: Hashable
+    var id: ID { get }
+}
+#endif
