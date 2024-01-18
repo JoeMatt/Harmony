@@ -95,6 +95,13 @@ class RepairRecordOperation: RecordOperation<Void>
                         
                         if let recalculatedRemoteHash
                         {
+                            if localRecord.sha1Hash != recalculatedRemoteHash
+                            {
+                                // Try updating localRecord's hash just in case client updated record during initial sync
+                                // e.g. from inside resolveConflict() to manually repair outdated record.
+                                try localRecord.updateSHA1Hash()
+                            }
+                            
                             if localRecord.sha1Hash == recalculatedRemoteHash
                             {
                                 // Hash DOES match after all.
