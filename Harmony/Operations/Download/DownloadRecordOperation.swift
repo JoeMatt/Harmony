@@ -231,13 +231,47 @@ private extension DownloadRecordOperation
                     }
                 }
                 
+                let recordID = localRecord.recordID
                 let fileIdentifier = remoteFile.identifier
                 
                 dispatchGroup.enter()
                 
                 let operation = ServiceOperation<File, FileError>(coordinator: self.coordinator) { (completionHandler) in
+                    // Attempt to download specific revision.
                     return self.managedObjectContext.performAndWait {
-                        return self.service.download(remoteFile, completionHandler: completionHandler)
+                        let versionID = remoteFile.versionIdentifier
+                        return self.service.download(remoteFile, version: versionID) { (result) in
+                            do throws(FileError)
+                            {
+                                let file = try result.get()
+                                completionHandler(.success(file))
+                            }
+                            catch .doesNotExist(let fileID)
+                            {
+                                Logger.sync.error("Remote file “\(fileID, privacy: .public)” (revision \(versionID, privacy: .public)) for record \(recordID, privacy: .public) does not exist, downloading latest version instead.")
+                                
+                                // Exact version does not exist, so fall back to latest version.
+                                self.managedObjectContext.perform {
+                                    self.service.download(remoteFile, version: nil) { result in
+                                        switch result
+                                        {
+                                        case .failure(let error):
+                                            // Failed to download latest version, either because it doesn't exist or due to network.
+                                            Logger.sync.error("Failed to download latest version of remote file “\(fileID, privacy: .public)” for record \(recordID, privacy: .public). \(error.localizedDescription, privacy: .public)")
+                                            
+                                        case .success(let file):
+                                            Logger.sync.info("Downloaded latest version of remote file “\(fileID, privacy: .public)” for record \(recordID, privacy: .public).")
+                                        }
+                                        
+                                        completionHandler(result)
+                                    }
+                                }
+                            }
+                            catch
+                            {
+                                completionHandler(.failure(error))
+                            }
+                        }
                     }
                 }
                 operation.resultHandler = { (result) in
